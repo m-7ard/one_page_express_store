@@ -1,0 +1,8 @@
+{
+    "tabWidth": 4,
+    "useTabs": false,
+    "prettier.singleAttributePerLine": false,
+    "semi": true,
+    "printWidth": 120
+  }
+  

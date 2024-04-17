@@ -1,0 +1,10 @@
+import express from "express";
+import register from "./register.js";
+import login from "./login.js";
+import user from "./user.js";
+import logout from "./logout.js";
+export const router = express.Router();
+router.post("/register", register);
+router.post("/login", login);
+router.get("/user", user);
+router.post("/logout", logout);

@@ -16,7 +16,7 @@ import { Dialog } from "@headlessui/react";
 import { useGenericForm } from "../../../../utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
-import { PaginatedQuery, ProductType } from "../../../../Types";
+import { ProductType } from "../../../../Types";
 import { useAbstractDialogContext, useProductContext } from "../../../../Context";
 import App from "../../App/App";
 import GenericForm from "../../../elements/forms/GenericForm";
@@ -87,17 +87,7 @@ function DeleteProductForm() {
             return Promise.reject(errors);
         },
         onSuccess: () => {
-            queryClient.setQueryData<PaginatedQuery<ProductType>>(["products"], (previous) => {
-                if (previous == null) {
-                    return;
-                }
-                const newData = {
-                    ...previous,
-                    results: previous.results.filter((otherProduct) => otherProduct.id !== product.id),
-                };
-
-                return newData;
-            });
+            queryClient.invalidateQueries({ queryKey: ["products"] });
             navigate({ to: "/success", state: (previous) => ({ ...previous, product }) });
         },
         onError: () => {

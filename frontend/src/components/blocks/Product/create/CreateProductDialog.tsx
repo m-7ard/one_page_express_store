@@ -22,8 +22,9 @@ import { useGenericForm } from "../../../../utils";
 import Fieldset from "../../../elements/forms/Fieldset";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ProductType } from "../../../../Types";
+import { PaginatedQuery, ProductType } from "../../../../Types";
 import { useAbstractDialogContext } from "../../../../Context";
+import App from "../../App/App";
 
 const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
 const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];
@@ -85,7 +86,8 @@ function CreateProductForm() {
                 body: formData,
             });
             if (response.ok) {
-                return await response.json();
+                const data: ProductType = await response.json();
+                return data;
             }
 
             const errors = await response.json();
@@ -93,9 +95,7 @@ function CreateProductForm() {
             return Promise.reject(errors);
         },
         onSuccess: (data) => {
-            queryClient.setQueryData<ProductType[]>(["products"], (previous) => {
-                return previous == null ? [data] : [...previous, data];
-            });
+            queryClient.invalidateQueries({ queryKey: ["products"] });
             navigate({ to: "/success", state: (previous) => ({ ...previous, product: data }) });
         },
     });
@@ -111,7 +111,7 @@ function CreateProductForm() {
             }}
         >
             <div className="text-xl font-bold">Create Product</div>
-            <hr className="h-0 w-full border-b-px border-gray-900"></hr>
+            <App.Divider/>
             <div className="flex flex-col gap-4 h-full overflow-auto max-h-96">
                 <Fieldset
                     errors={errors}
@@ -124,7 +124,9 @@ function CreateProductForm() {
                         {
                             name: "description",
                             label: "Description",
-                            widget: FormTextAreaWidget({}),
+                            widget: FormTextAreaWidget({
+                                maxLength: 512,
+                            }),
                             optional: true,
                         },
                         {
@@ -162,8 +164,8 @@ function CreateProductForm() {
                     ]}
                 />
             </div>
-            <hr className="h-0 w-full border-b-px border-gray-900"></hr>
-            <button className="ml-auto flex justify-center leading-none transition-colors flex items-center px-4 py-2 font-medium cursor-pointer py-2 bg-yellow-300 hover:bg-yellow-400">
+            <App.Divider/>
+            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>
                 Create
             </button>
         </form>
@@ -183,7 +185,7 @@ function Success() {
     return (
         <div className="flex flex-col gap-4">
             <div className="w-full text-center">Successfully Created "{product.name}"</div>
-            <hr className="h-0 w-full border-b-px border-gray-900"></hr>
+            <App.Divider/>
             <Link
                 to={"/"}
                 className="flex justify-center leading-none transition-colors items-center px-4 py-2 font-medium cursor-pointer bg-yellow-300 hover:bg-yellow-400"

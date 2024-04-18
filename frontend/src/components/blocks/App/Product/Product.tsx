@@ -3,6 +3,7 @@ import EditProductDialog from "../../Product/edit/EditProductDialog";
 import { ProductContext } from "../../../../Context";
 import InformationDisplayDialog from "../../Product/info/ProductInformationDisplayDialog";
 import DeleteProductDialog from "../../Product/delete/DeleteProductDialog";
+import App from "../App";
 
 export default function Product({ name, price, images, description, kind, specification, id }: ProductType) {
     return (
@@ -18,10 +19,10 @@ export default function Product({ name, price, images, description, kind, specif
                 </div>
                 <div>
                     <div className="text-sm text-gray-600">{kind}</div>
-                    <div className="text-base text-gray-900 text-semibold">{name}</div>
+                    <div className="text-base text-gray-900 font-medium">{name}</div>
                     <div className="text-sm text-gray-900">{price}$</div>
                 </div>
-                <div className="flex justify-center leading-none transition-colors items-center px-4 py-2 cursor-pointer bg-yellow-300 hover:bg-yellow-400 border border-gray-900">
+                <div className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}>
                     Add to Cart
                 </div>
                 <div>

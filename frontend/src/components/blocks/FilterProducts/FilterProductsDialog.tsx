@@ -8,6 +8,8 @@ import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldW
 import FormField from "../../elements/forms/FormField";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
+import { PaginatedQuery, ProductType } from "../../../Types";
+import App from "../App/App";
 
 export default function FilterProductsDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
     return (
@@ -30,7 +32,7 @@ function FilterProductsForm() {
     const { filters } = useAppContext();
     const { setOpen } = useAbstractDialogContext();
     const { sortParams, filterParams } = useQueryStringContext();
-    
+
     const formRef = useRef<HTMLFormElement>(null);
     const [formKey, setFormKey] = useState(() => window.crypto.randomUUID());
     const [choices, setChoices] = useState<Record<string, string | undefined>>(filterParams.current);
@@ -45,7 +47,8 @@ function FilterProductsForm() {
                 method: "GET",
             });
             if (response.ok) {
-                return await response.json();
+                const data: PaginatedQuery<ProductType> = await response.json();
+                return data;
             }
 
             return Promise.reject();
@@ -77,21 +80,25 @@ function FilterProductsForm() {
             <div className="flex grow overflow-hidden">
                 <div className="flex flex-col gap-4 max-h-full w-full overflow-auto">
                     <div className="flex flex-row gap-4">
-                        <FormField
-                            name="min_price"
-                            label="Min Price"
-                            widget={FormCharFieldWidget({
-                                initial: choices?.min_price,
-                            })}
-                        />
-                        <FormField
-                            name="max_price"
-                            label="Max Price"
-                            widget={FormCharFieldWidget({
-                                inputMode: "numeric",
-                                initial: choices?.max_price,
-                            })}
-                        />
+                        <div className="basis-1/2">
+                            <FormField
+                                name="min_price"
+                                label="Min Price"
+                                widget={FormCharFieldWidget({
+                                    initial: choices?.min_price,
+                                })}
+                            />
+                        </div>
+                        <div className="basis-1/2">
+                            <FormField
+                                name="max_price"
+                                label="Max Price"
+                                widget={FormCharFieldWidget({
+                                    inputMode: "numeric",
+                                    initial: choices?.max_price,
+                                })}
+                            />
+                        </div>
                     </div>
                     <Fieldset
                         fields={filters.map(({ field_name, field_value }) => {
@@ -109,7 +116,7 @@ function FilterProductsForm() {
             </div>
             <div className="flex flex-col gap-4 shrink-0">
                 <button
-                    className="flex justify-center leading-none transition-colors flex items-center px-4 py-2 cursor-pointer py-2 bg-yellow-300 hover:bg-yellow-400 border border-gray-900"
+                    className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
                     type="submit"
                 >
                     Filter
@@ -117,7 +124,7 @@ function FilterProductsForm() {
                 <hr className="h-0 w-full border-b-px border-gray-900"></hr>
                 <button
                     type="reset"
-                    className="flex justify-center leading-none transition-colors flex items-center px-4 py-2 cursor-pointer py-2 bg-gray-300 hover:bg-gray-400 border border-gray-900"
+                    className={`${App.BaseButtonClassNames} justify-center bg-gray-300 hover:bg-gray-400`}
                 >
                     Clear Filters
                 </button>

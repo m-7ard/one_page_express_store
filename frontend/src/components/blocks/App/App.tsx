@@ -8,8 +8,8 @@ import {
 import UserPopover from "../UserPopover/UserPopover";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import React, { useRef } from "react";
-import { AppContext, QueryStringContext } from "../../../Context";
-import { FilterType, PaginatedQuery, ProductType } from "../../../Types";
+import { AppContext, QueryStringContext, useQueryStringContext } from "../../../Context";
+import { FilterType, PaginatedQuery, ProductType, User } from "../../../Types";
 import FilterProductsDialog from "../FilterProducts/FilterProductsDialog";
 import CreateProductDialog from "../Product/create/CreateProductDialog";
 import Product from "./Product/Product";
@@ -43,7 +43,9 @@ export function Providers({ children }: React.PropsWithChildren) {
 }
 
 export default function App() {
-    const userQuery = useQuery({
+    const { sortParams, filterParams } = useQueryStringContext();
+
+    const userQuery = useQuery<User>({
         queryKey: ["user"],
         queryFn: async () => {
             const response = await fetch("/api/users/user/");
@@ -58,12 +60,15 @@ export default function App() {
 
     const productsQuery = useQuery<PaginatedQuery<ProductType>>({
         queryKey: ["products"],
+        throwOnError: true,
         queryFn: async () => {
-            const response = await fetch("/api/products/list");
+            const queryString = new URLSearchParams({ ...sortParams.current, ...filterParams.current }).toString();
+            const response = await fetch(`/api/products/list?${queryString}`, {
+                method: "GET",
+            });
             if (response.ok) {
                 return response.json();
             }
-            throw Error("Could not fetch products from server");
         },
     });
 
@@ -101,17 +106,19 @@ export default function App() {
                             </div>
                             <hr className="h-0 border-t border-gray-900"></hr>
                             <div className="flex flex-row items-center justify-between gap-4 text-gray-900 flex-wrap">
-                                <CreateProductDialog
-                                    Trigger={({ onClick }) => (
-                                        <div
-                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
-                                            onClick={onClick}
-                                        >
-                                            <div>Add</div>
-                                            <PlusIcon className="w-4 h-4" />
-                                        </div>
-                                    )}
-                                />
+                                {userQuery.data != null && userQuery.data.is_admin && (
+                                    <CreateProductDialog
+                                        Trigger={({ onClick }) => (
+                                            <div
+                                                className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                                onClick={onClick}
+                                            >
+                                                <div>Add</div>
+                                                <PlusIcon className="w-4 h-4" />
+                                            </div>
+                                        )}
+                                    />
+                                )}
                                 <div className="flex flex-row items-center gap-4 text-gray-900">
                                     <SortProductsPopover
                                         Trigger={({ setReferenceElement }) => (
@@ -163,6 +170,10 @@ export default function App() {
 }
 
 App.BaseButtonClassNames =
-    "flex gap-2 px-4 py-2 items-center leading-none transition-colors cursor-pointer border border-gray-900";
+    "flex gap-2 px-4 py-2 items-center leading-none content-box transition-colors cursor-pointer border border-gray-900";
+
+App.InputWrapperClassNames =
+    "after:content-['.'] flex p-2 leading-none content-box border border-gray-900 text-gray-900 relative";
+App.InputElementClassNames = "absolute inset-0 transition-colors p-2";
 
 App.Divider = () => <hr className="h-0 w-full border-b-px border-gray-900"></hr>;

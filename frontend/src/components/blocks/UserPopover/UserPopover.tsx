@@ -1,5 +1,12 @@
 import React, { Fragment, PropsWithChildren } from "react";
-import { ArchiveBoxIcon, ArrowRightCircleIcon, ChevronDoubleRightIcon, ChevronRightIcon, Cog6ToothIcon, UserIcon } from "@heroicons/react/24/solid";
+import {
+    ArchiveBoxIcon,
+    ArrowRightCircleIcon,
+    ChevronDoubleRightIcon,
+    ChevronRightIcon,
+    Cog6ToothIcon,
+    UserIcon,
+} from "@heroicons/react/24/solid";
 import { Popover } from "@headlessui/react";
 import AbstractPopover from "../../elements/abstract/AbstractPopover";
 import Fieldset from "../../elements/forms/Fieldset";
@@ -20,6 +27,7 @@ import { FormErrors } from "./components/forms/GenericForm";
 import { User } from "../../../Types";
 import { useAppContext } from "../../../Context";
 import { createUseContext, useGenericForm } from "../../../utils";
+import App from "../App/App";
 
 const [AuthContext, useAuthContext] = createUseContext<{
     user: User;
@@ -79,7 +87,7 @@ export default function UserPopover() {
             )}
             Panel={({ setPopperElement, popper: { styles, attributes } }) => (
                 <Popover.Panel
-                    className="bg-gray-50 text-gray-900 p-2 px-4 mt-4 border border-gray-900 w-full max-w-72 shadow"
+                    className="bg-gray-50 text-gray-900 p-4 mt-4 border border-gray-900 w-full max-w-72 shadow"
                     ref={setPopperElement}
                     style={styles.popper}
                     {...attributes.popper}
@@ -132,41 +140,48 @@ function Login() {
     });
 
     return (
-        <form
-            className="flex flex-col gap-2"
+        <UserPopover.Body
+            tag="form"
             onSubmit={(event) => {
                 event.preventDefault();
                 mutation.mutate({ form: event.currentTarget });
             }}
         >
             <UserPopover.Title text="Login" />
-            <UserPopover.Divider />
+            <App.Divider />
             <UserPopover.FormError errors={errors} />
-            <Fieldset
-                fields={[
-                    {
-                        name: "username",
-                        label: "Username",
-                        widget: FormCharFieldWidget({
-                            autoComplete: "true",
-                        }),
-                    },
-                    {
-                        name: "password",
-                        label: "Password",
-                        widget: FormCharFieldWidget({
-                            type: "password",
-                        }),
-                    },
-                ]}
-                errors={errors}
-            />
-            <button className={`${UserPopover.ButtonBaseClasses} bg-yellow-300 hover:bg-yellow-400`}>Login</button>
-            <UserPopover.Divider />
-            <Link to={"/register"} className={`${UserPopover.ButtonBaseClasses} bg-green-300 hover:bg-green-400`}>
+            <div className="flex flex-col gap-2">
+                <Fieldset
+                    fields={[
+                        {
+                            name: "username",
+                            label: "Username",
+                            widget: FormCharFieldWidget({
+                                autoComplete: "true",
+                            }),
+                        },
+                        {
+                            name: "password",
+                            label: "Password",
+                            widget: FormCharFieldWidget({
+                                type: "password",
+                            }),
+                        },
+                    ]}
+                    errors={errors}
+                />
+                <button className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}>
+                    Login
+                </button>
+            </div>
+            <App.Divider />
+            <Link
+                to={"/register"}
+                className={`${App.BaseButtonClassNames} justify-center bg-green-300 hover:bg-green-400`}
+            >
                 Go to Register
             </Link>
-        </form>
+        </UserPopover.Body>
     );
 }
 
@@ -207,30 +222,37 @@ function Register() {
             }}
         >
             <UserPopover.Title text="Register" />
-            <UserPopover.Divider />
+            <App.Divider />
             <UserPopover.FormError errors={errors} />
-            <Fieldset
-                fields={[
-                    {
-                        name: "username",
-                        label: "Username",
-                        widget: FormCharFieldWidget({
-                            autoComplete: "true",
-                        }),
-                    },
-                    {
-                        name: "password",
-                        label: "Password",
-                        widget: FormCharFieldWidget({
-                            type: "password",
-                        }),
-                    },
-                ]}
-                errors={errors}
-            />
-            <button className={`${UserPopover.ButtonBaseClasses} bg-green-300 hover:bg-green-400`}>Register</button>
-            <UserPopover.Divider />
-            <Link to={"/login"} className={`${UserPopover.ButtonBaseClasses} bg-yellow-300 hover:bg-yellow-400`}>
+            <div className="flex flex-col gap-2">
+                <Fieldset
+                    fields={[
+                        {
+                            name: "username",
+                            label: "Username",
+                            widget: FormCharFieldWidget({
+                                autoComplete: "true",
+                            }),
+                        },
+                        {
+                            name: "password",
+                            label: "Password",
+                            widget: FormCharFieldWidget({
+                                type: "password",
+                            }),
+                        },
+                    ]}
+                    errors={errors}
+                />
+                <button className={`${App.BaseButtonClassNames} justify-center bg-green-300 hover:bg-green-400`}>
+                    Register
+                </button>
+            </div>
+            <App.Divider />
+            <Link
+                to={"/login"}
+                className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
+            >
                 Go to Login
             </Link>
         </UserPopover.Body>
@@ -266,23 +288,21 @@ function Profile() {
     return (
         <UserPopover.Body tag="div">
             <UserPopover.Title text="Profile" />
-            <UserPopover.Divider />
+            <App.Divider />
             <div className="flex flex-row gap-2">
-                <div className="relative w-12 h-12 bg-gray-200"></div>
-                <div className="flex flex-col gap-1 justify-center">
-                    <div className="text-gray-900 font-medium text-lg leading-none">{user.username}</div>
-                    <div className="text-gray-900 text-base leading-none">884 Orders</div>
+                <div className="relative w-12 h-12 bg-gray-200 border border-gray-900"></div>
+                <div className="flex flex-col">
+                    <div className="text-base text-gray-900 font-medium">{user.username}</div>
+                    <div className="text-sm text-gray-900">884 Orders</div>
                 </div>
             </div>
-            <div className="flex flex-row border border-gray-900 justify-center text-gray-900 cursor-pointer hover:underline">
-                <div className="text-base font-medium">Account Settings</div>
+            <div>
+                <div className={`text-sm text-gray-900 hover:underline cursor-pointer w-fit`}>Account Settings</div>
+                <div className={`text-sm text-gray-900 hover:underline cursor-pointer w-fit`}>Orders</div>
             </div>
-            <div className="flex flex-row border border-gray-900 justify-center text-gray-900 cursor-pointer hover:underline">
-                <div className="text-base font-medium">Orders</div>
-            </div>
-            <UserPopover.Divider />
+            <App.Divider />
             <button
-                className={`${UserPopover.ButtonBaseClasses} bg-yellow-300 hover:bg-yellow-400`}
+                className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
                 onClick={() => {
                     mutation.mutate();
                 }}
@@ -301,16 +321,14 @@ UserPopover.Body = <T extends keyof HTMLElementTagNameMap>({
     const Element = React.createElement(tag, {
         children,
         ...props,
-        class: "flex flex-col gap-2",
+        class: "flex flex-col gap-4",
     });
     return Element;
 };
 
 UserPopover.Title = function Title({ text }: { text: string }) {
-    return <div className="text-gray-900 text-lg font-bold">{text}</div>;
+    return <div className="text-lg font-bold">{text}</div>;
 };
-
-UserPopover.Divider = () => <hr className="h-0 w-full border-b-px border-gray-900"></hr>;
 
 UserPopover.FormError = ({ errors }: { errors?: FormErrors }) => {
     return (
@@ -330,6 +348,3 @@ UserPopover.FormError = ({ errors }: { errors?: FormErrors }) => {
         )
     );
 };
-
-UserPopover.ButtonBaseClasses =
-    "flex justify-center leading-none transition-colors items-center px-4 py-2 font-medium cursor-pointer";

@@ -4,6 +4,7 @@ import { useQueryStringContext } from "../../../Context";
 import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import AbstractPopover, { AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
+import { PaginatedQuery, ProductType } from "../../../Types";
 
 const CHOICES = [
     { label: "Newest", value: "newest" },
@@ -23,7 +24,8 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
                 method: "GET",
             });
             if (response.ok) {
-                return await response.json();
+                const data: PaginatedQuery<ProductType> = await response.json();
+                return data;
             }
 
             const errors = await response.json();

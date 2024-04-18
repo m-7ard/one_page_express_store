@@ -23,6 +23,7 @@ import { useCallback, useRef, useState } from "react";
 import { ProductType } from "../../../../Types";
 import { useAbstractDialogContext, useProductContext } from "../../../../Context";
 import { SpecificationInputWidget } from "../../../elements/forms/widgets/FormSpecificationWidget";
+import App from "../../App/App";
 
 const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
 const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];
@@ -53,12 +54,7 @@ export default function EditProductDialog({
         onClick: () => void;
     }>;
 }) {
-    return (
-        <AbstractDialog
-            Trigger={Trigger}
-            Panel={EditProductDialog.Panel}
-        />
-    );
+    return <AbstractDialog Trigger={Trigger} Panel={EditProductDialog.Panel} />;
 }
 
 EditProductDialog.Panel = function Panel({ onClose }: { onClose: () => void }) {
@@ -105,15 +101,7 @@ function EditProductForm() {
             return Promise.reject(errors);
         },
         onSuccess: (data) => {
-            queryClient.setQueryData<ProductType[]>(["products"], (previous) => {
-                if (previous == null) {
-                    return data;
-                }
-
-                const newData = previous.map((otherProduct) => (otherProduct.id === product.id ? data : otherProduct));
-
-                return newData;
-            });
+            queryClient.invalidateQueries({ queryKey: ["products"] });
             navigate({ to: "/success", state: (previous) => ({ ...previous, product: data }) });
         },
     });
@@ -191,7 +179,7 @@ function EditProductForm() {
                 />
             </div>
             <hr className="h-0 w-full border-b-px border-gray-900"></hr>
-            <button className="ml-auto flex justify-center leading-none transition-colors flex items-center px-4 py-2 font-medium cursor-pointer py-2 bg-yellow-300 hover:bg-yellow-400">
+            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>
                 Edit
             </button>
         </form>
@@ -212,7 +200,7 @@ function Success() {
         <div className="flex flex-col gap-4">
             <div className="w-full text-center">Successfully Edited "{product.name}"</div>
             <div
-                className="flex justify-center leading-none transition-colors items-center px-4 py-2 font-medium cursor-pointer bg-gray-300 hover:bg-gray-400"
+                className={`justify-center ${App.BaseButtonClassNames} bg-gray-300 hover:bg-gray-400`}
                 onClick={() => setOpen(false)}
             >
                 Close

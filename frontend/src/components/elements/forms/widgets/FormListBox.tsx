@@ -2,6 +2,7 @@ import { Listbox } from "@headlessui/react";
 import { useEffect, useState } from "react";
 import { asWidget } from "../../../../utils";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
+import App from "../../../blocks/App/App";
 
 type Value = string | number;
 type Choice = {
@@ -47,28 +48,24 @@ export function FormListBox({
             {({ open }) => (
                 <>
                     <Listbox.Button
-                        className={`flex justify-between items-center w-full text-left transition-colors py-2 px-2 leading-none border border-gray-900 text-gray-900
-                        bg-gray-100 hover:bg-gray-200 cursor-pointer`}
+                        className={`${App.BaseButtonClassNames} justify-between bg-gray-100 hover:bg-gray-200 cursor-pointer`}
                     >
-                        <div>{selectedChoice.label}</div>
+                        {selectedChoice.label}
                         <ChevronRightIcon className={`w-4 h-4 ${open && 'rotate-90'}`} />
                     </Listbox.Button>
                     <Listbox.Options
                         className={"overflow-auto max-h-64 divide-y divide-gray-900 border border-gray-900"}
                     >
                         <Listbox.Option
-                            className={`w-full transition-colors py-2 px-2 leading-none text-gray-900 cursor-pointer
-                            hover:bg-gray-200 ${selectedValue == null ? "bg-gray-200" : "bg-gray-100"}`}
+                            className={`${App.BaseButtonClassNames.replace("border", "")} text-base hover:bg-gray-200 ${selectedValue == null ? "bg-gray-200" : "bg-gray-100"}`}
+                            value={undefined}
                         >
                             {placeholder}
                         </Listbox.Option>
                         {choices.map(({ value, label }, i) => (
                             <Listbox.Option key={i} value={value}>
                                 {({ active, selected }) => (
-                                    <div
-                                        className={`w-full transition-colors py-2 px-2 leading-none text-gray-900 cursor-pointer
-                                        hover:bg-gray-200 ${selected ? "bg-gray-200" : "bg-gray-100"}`}
-                                    >
+                                    <div className={`${App.BaseButtonClassNames.replace("border", "")} text-base hover:bg-gray-200 ${selected ? "bg-gray-200" : "bg-gray-100"}`}>
                                         {label}
                                     </div>
                                 )}

@@ -7,7 +7,7 @@ import {
 } from "@heroicons/react/24/solid";
 import UserPopover from "../UserPopover/UserPopover";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import React, { useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { AppContext, QueryStringContext, useQueryStringContext } from "../../../Context";
 import { FilterType, PaginatedQuery, ProductType, User } from "../../../Types";
 import FilterProductsDialog from "../FilterProducts/FilterProductsDialog";
@@ -15,6 +15,7 @@ import CreateProductDialog from "../Product/create/CreateProductDialog";
 import Product from "./Product/Product";
 import { Popover } from "@headlessui/react";
 import SortProductsPopover from "../SortProductsPopover/SortProductsPopover";
+import { FormListBox } from "../../elements/forms/widgets/FormListBox";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -43,6 +44,9 @@ export function Providers({ children }: React.PropsWithChildren) {
 }
 
 export default function App() {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const scrollToShop = useCallback(() => scrollRef.current?.scrollIntoView(), []);
+
     const { sortParams, filterParams } = useQueryStringContext();
 
     const userQuery = useQuery<User>({
@@ -76,7 +80,7 @@ export default function App() {
         userQuery.isSuccess &&
         productsQuery.isSuccess && (
             <AppContext.Provider value={{ user: userQuery.data, filters }}>
-                <div className="h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
+                <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
                     <div className="flex flex-row gap-4 px-4 py-2 bg-stone-700 text-gray-50 items-center shadow z-50">
                         <div className="flex flex-row ml-auto gap-4 items-center">
                             <UserPopover />
@@ -93,13 +97,16 @@ export default function App() {
                         <div className="mx-auto flex flex-col items-center text-center gap-4 p-4 h-96 w-full max-w-prose text-white relative z-20">
                             <div className="text-4xl font-black">Find the Perfect Blend You've Been Looking for.</div>
                             <div className="text-lg text-bold text-gray-300">Explore The Finest Curated Selection</div>
-                            <div className="mt-auto bg-yellow-400 px-4 py-2 text-xl font-bold text-gray-900">
+                            <div
+                                className="mt-auto transition-colors bg-yellow-400 hover:bg-yellow-500 px-4 py-2 text-xl font-bold text-gray-900 cursor-pointer"
+                                onClick={scrollToShop}
+                            >
                                 Shop Now
                             </div>
-                            <ArrowDownIcon className="h-12 w-12" />
+                            <ArrowDownIcon className="h-12 w-12 cursor-pointer" onClick={scrollToShop} />
                         </div>
                     </div>
-                    <div className="flex flex-row gap-4 p-4">
+                    <div className="flex flex-row gap-4 p-4" ref={scrollRef}>
                         <div className="flex flex-col grow gap-4 max-w-screen-lg w-full mx-auto">
                             <div className="text-xs">
                                 Showing {productsQuery.data.results.length}/{productsQuery.data.count} Results
@@ -160,6 +167,21 @@ export default function App() {
                                         );
                                     },
                                 )}
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <div className="text-base font-medium">Back</div>
+                                <div className="flex flex-row gap-8 items-center">
+                                    <div className="text-base">
+                                        Page
+                                    </div>
+                                    <FormListBox name="page" initial={1} choices={[
+                                        { value: 1, label: 1 },
+                                        { value: 2, label: 2 },
+                                        { value: 3, label: 3 }
+                                    ]} />
+                                </div>
+                                <div className="text-base font-medium">Next</div>
+
                             </div>
                         </div>
                     </div>

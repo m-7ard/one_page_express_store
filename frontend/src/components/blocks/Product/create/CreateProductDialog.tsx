@@ -12,7 +12,7 @@ import {
     useRouterState,
 } from "@tanstack/react-router";
 import { PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import AbstractDialog, { AbstractDialogTrigger } from "../../../elements/abstract/AbstractDialog";
+import AbstractDialog, { AbstractDialogPanel, AbstractDialogTrigger } from "../../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
 import { FormCharFieldWidget } from "../../../elements/forms/widgets/FormCharFieldWidget";
 import LazyFormImageUploadWidget from "../../../elements/forms/widgets/LazyFormImageUpload";
@@ -21,7 +21,7 @@ import { FormTextAreaWidget } from "../../../elements/forms/widgets/FormTextArea
 import { useGenericForm } from "../../../../utils";
 import Fieldset from "../../../elements/forms/Fieldset";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { PaginatedQuery, ProductType } from "../../../../Types";
 import { useAbstractDialogContext } from "../../../../Context";
 import App from "../../App/App";
@@ -47,27 +47,31 @@ const successRoute = createRoute({
 });
 
 const routeTree = rootRoute.addChildren([formRoute, successRoute]);
-const memoryHistory = createMemoryHistory({ initialEntries: ["/"] });
-const router = createRouter({
-    routeTree,
-    history: memoryHistory,
-});
 
 export default function CreateProductDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
     return (
         <AbstractDialog
             Trigger={Trigger}
-            Panel={({ onClose }) => (
-                <Dialog.Panel className="m-auto p-4 max-w-prose w-full max-h-full overflow-hidden bg-yellow-50 relative text-gray-900  border border-gray-900 shadow">
-                    <div className="absolute right-4 top-4 cursor-pointer" onClick={onClose}>
-                        <XMarkIcon className="w-6 h-6" />
-                    </div>
-                    {<RouterProvider router={router} />}
-                </Dialog.Panel>
-            )}
+            Panel={CreateProductDialog.Panel}
         />
     );
 }
+
+CreateProductDialog.Panel = function Panel ({ onClose }: { onClose: () => void }) {
+    const router = useRef(createRouter({
+        routeTree,
+        history: createMemoryHistory({ initialEntries: ["/"] }),
+    }));
+
+    return (
+        <Dialog.Panel className="m-auto p-4 max-w-prose w-full max-h-full overflow-hidden bg-yellow-50 relative text-gray-900  border border-gray-900 shadow">
+            <div className="absolute right-4 top-4 cursor-pointer" onClick={onClose}>
+                <XMarkIcon className="w-6 h-6" />
+            </div>
+            {<RouterProvider router={router.current} />}
+        </Dialog.Panel>
+    );
+} 
 
 function CreateProductForm() {
     const queryClient = useQueryClient();
@@ -111,7 +115,7 @@ function CreateProductForm() {
             }}
         >
             <div className="text-xl font-bold">Create Product</div>
-            <App.Divider/>
+            <App.Divider />
             <div className="flex flex-col gap-4 h-full overflow-auto max-h-96">
                 <Fieldset
                     errors={errors}
@@ -164,10 +168,8 @@ function CreateProductForm() {
                     ]}
                 />
             </div>
-            <App.Divider/>
-            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>
-                Create
-            </button>
+            <App.Divider />
+            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>Create</button>
         </form>
     );
 }
@@ -185,15 +187,15 @@ function Success() {
     return (
         <div className="flex flex-col gap-4">
             <div className="w-full text-center">Successfully Created "{product.name}"</div>
-            <App.Divider/>
+            <App.Divider />
             <Link
                 to={"/"}
-                className="flex justify-center leading-none transition-colors items-center px-4 py-2 font-medium cursor-pointer bg-yellow-300 hover:bg-yellow-400"
+                className={["bg-yellow-300 hover:bg-yellow-400", "justify-center", App.BaseButtonClassNames].join(" ")}
             >
                 Create Another
             </Link>
             <div
-                className="flex justify-center leading-none transition-colors items-center px-4 py-2 font-medium cursor-pointer bg-gray-300 hover:bg-gray-400"
+                className={["bg-gray-300 hover:bg-gray-400", "justify-center", App.BaseButtonClassNames].join(" ")}
                 onClick={() => setOpen(false)}
             >
                 Close

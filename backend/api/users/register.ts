@@ -28,10 +28,7 @@ const schema = z.object({
 });
 
 export default async function register(request: Request, response: Response) {
-    let connection: mysql.PoolConnection | null = null;
-
-    try {
-        connection = await pool.getConnection();
+    await dbOperation(async (connection) => {
         const validation = await schema.safeParseAsync(request.body);
         if (validation.success === true) {
             const cleanedData = validation.data;
@@ -47,14 +44,14 @@ export default async function register(request: Request, response: Response) {
             const sessionCookie = lucia.createSessionCookie(session.id);
             response.appendHeader("Set-Cookie", sessionCookie.serialize());
 
-            const [userQuery, fields] = await connection.execute<DatabaseUser[]>("SELECT * FROM user WHERE id = ?", [userId]);
+            const [userQuery, fields] = await connection.execute<DatabaseUser[]>("SELECT * FROM user WHERE id = ?", [
+                userId,
+            ]);
             const [user] = userQuery;
 
             response.status(201).json(userSerializer.parse(user));
         } else {
             response.status(400).json(validation.error.flatten());
         }
-    } finally {
-        connection?.release();
-    }
+    });
 }

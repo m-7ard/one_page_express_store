@@ -36,10 +36,7 @@ export default async function login(request: Request, response: Response) {
         return;
     }
 
-    let connection: mysql.PoolConnection | null = null;
-
-    try {
-        connection = await pool.getConnection();
+    await dbOperation(async (connection) => {
         const validation = await schema.safeParseAsync(request.body);
         if (validation.success === true) {
             const [userQuery, fields] = await connection.execute<DatabaseUser[]>(
@@ -56,7 +53,5 @@ export default async function login(request: Request, response: Response) {
         } else {
             response.status(400).json(validation.error.flatten());
         }
-    } finally {
-        connection?.release();
-    }
+    });
 }

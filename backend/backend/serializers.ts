@@ -18,8 +18,8 @@ export const productSerializer = z.object({
     price: z.number(),
     specification: z
         .string()
-        .transform((value) => JSON.parse(value)),
+        .transform<Record<string, string>>((value) => JSON.parse(value)),
     images: z
-    .string()
-    .transform((value) => JSON.parse(value)),
+        .string()
+        .transform<string[]>((value) => JSON.parse(value)),
 });

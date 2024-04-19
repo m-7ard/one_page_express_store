@@ -1,6 +1,5 @@
-import mysql, { ResultSetHeader } from "mysql2/promise";
+import { ResultSetHeader } from "mysql2/promise";
 import { Request, Response } from "express";
-import { pool } from "../../lib/db.js";
 import { nanoid } from "nanoid";
 import { writeFile } from "fs/promises";
 import { BASE_DIR } from "../../backend/settings.js";

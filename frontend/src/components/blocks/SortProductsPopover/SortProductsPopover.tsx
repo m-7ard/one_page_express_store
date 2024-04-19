@@ -5,6 +5,7 @@ import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import AbstractPopover, { AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
 import { PaginatedQuery, ProductType } from "../../../Types";
+import App from "../App/App";
 
 const CHOICES = [
     { label: "Newest", value: "newest" },
@@ -49,7 +50,15 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
                     {CHOICES.map(({ label, value }) => (
                         <Popover.Button key={value}>
                             <div
-                                className="flex justify-between items-center gap-4 leading-none transition-colors px-4 py-2 cursor-pointer bg-gray-100 hover:bg-gray-200 group ui-active:outline-none ui-open:outline-none"
+                                className={[
+                                    "group ui-active:outline-none ui-open:outline-none",
+                                    "justify-between",
+                                    App.BaseButtonClassNames.replace("border", ""),
+                                    ...([sortParams.current.sort === value 
+                                        ? "bg-gray-200"
+                                        : 'bg-gray-100 hover:bg-gray-200'
+                                    ])
+                                ].join(" ")}
                                 key={value}
                                 onClick={() => {
                                     mutation.mutate({ value });
@@ -57,8 +66,15 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
                                 }}
                             >
                                 <div className="whitespace-nowrap">{label}</div>
-                                <SolidFunnelIcon className="w-4 h-4 group-hover:block hidden" />
-                                <OutlineFunnelIcon className="w-4 h-4 group-hover:hidden block" />
+                                <SolidFunnelIcon 
+                                    className={[
+                                        "w-4 h-4 group-hover:opacity-100",
+                                        ...([sortParams.current.sort === value 
+                                            ? "opacity-100"
+                                            : 'opacity-0'
+                                        ])
+                                    ].join(" ")} 
+                                />
                             </div>
                         </Popover.Button>
                     ))}

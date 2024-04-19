@@ -56,9 +56,7 @@ export function Providers({ children }: React.PropsWithChildren) {
 export default function App() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const scrollToShop = useCallback(() => scrollRef.current?.scrollIntoView(), []);
-
-    const { sortParams, filterParams, page_index, buildQueryString } = useQueryStringContext();
-    console.log("app rerender", sortParams, filterParams, page_index);
+    const { page_index, buildQueryString } = useQueryStringContext();
 
     const userQuery = useQuery<User>({
         queryKey: ["user"],
@@ -179,7 +177,7 @@ export default function App() {
                                     },
                                 )}
                             </div>
-                            <div className="flex justify-between items-center">
+                            <div className="flex gap-2 justify-between items-center">
                                 <div
                                     className={[
                                         ...["text-base select-none", App.BaseButtonClassNames],
@@ -197,7 +195,7 @@ export default function App() {
                                 >
                                     Back
                                 </div>
-                                <div className="flex flex-row gap-8 items-center">
+                                <div className="flex flex-row gap-2 items-center">
                                     <div className="text-base">Page</div>
                                     <FormListBox
                                         key={page_index.current}
@@ -250,7 +248,7 @@ export default function App() {
 }
 
 App.BaseButtonClassNames =
-    "flex gap-2 px-4 py-2 items-center leading-none content-box transition-colors cursor-pointer border border-gray-900";
+    "flex gap-2 px-4 py-2 items-center leading-none content-box transition-colors cursor-pointer border border-gray-900 select-none";
 
 App.InputWrapperClassNames =
     "after:content-['.'] flex p-2 leading-none content-box border border-gray-900 text-gray-900 relative";

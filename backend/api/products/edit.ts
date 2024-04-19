@@ -9,6 +9,7 @@ import { productSerializer } from "../../backend/serializers.js";
 import { productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
 import { dbOperation } from "../../backend/utils.js";
+import { rm } from "fs/promises";
 
 export default async function edit(request: Request, response: Response) {
     if (response.locals.user == null || response.locals.user.is_admin === false) {
@@ -18,14 +19,41 @@ export default async function edit(request: Request, response: Response) {
 
     return await dbOperation(async (connection) => {
         const { newImages, existingImages } = getImages(request);
-        const validation = await productSchema.required().safeParseAsync({
-            id: request.params.id,
-            ...request.body,
-            newImages,
-            existingImages,
-        });
+        const validation = await productSchema
+            .required()
+            .refine(
+                async (values) => {
+                    const [productQuery] = await connection.execute<DatabaseProduct[]>(
+                        `SELECT * FROM product WHERE id = ?`,
+                        [values.id],
+                    );
+                    const [product] = productQuery;
+                    return existingImages.every(({ fileName }) => product.images.includes(fileName));
+                },
+                { message: "Attempting to add saved image/s that don't exist on product." },
+            )
+            .safeParseAsync({
+                id: request.params.id,
+                ...request.body,
+                newImages,
+                existingImages,
+            });
         if (validation.success) {
             const cleanedData = validation.data;
+            
+            const newExistingImages = cleanedData.existingImages.map(({ fileName }) => fileName);
+            const [oldProductQuery] = await connection.execute<DatabaseProduct[]>(
+                "SELECT * FROM product WHERE id = ?",
+                [cleanedData.id],
+            );
+            const oldProduct = productSerializer.parse(oldProductQuery[0]);
+            const filesForDeletion = oldProduct.images.filter((image) => !newExistingImages.includes(image));
+            await Promise.all(
+                filesForDeletion.map(async (image) => {
+                    await rm(`media/${image}`);
+                }),
+            );
+
             const savedFileNames = await Promise.all(
                 cleanedData.newImages.map(async ({ index, file }) => {
                     const id = nanoid();

@@ -17,12 +17,14 @@ export function FormListBox({
     choices,
     onChange,
     placeholder = "---",
+    nullable = true,
 }: {
     initial?: Value;
     choices: Choice[];
     name: string;
     onChange?: (value?: Value) => void;
     placeholder?: string;
+    nullable?: boolean;
 }) {
     const [selectedValue, setSelectedValue] = useState(initial);
     const selectedChoice = choices.find((choice) => choice.value === selectedValue) ?? {
@@ -79,15 +81,17 @@ export function FormListBox({
                     <Listbox.Options
                         className={"overflow-auto max-h-64 divide-y divide-gray-900 border border-gray-900"}
                         ref={setPopperElement}
-                        style={{...popper.styles.popper, width: `${referenceElement?.offsetWidth}px`}}
+                        style={{ ...popper.styles.popper, width: `${referenceElement?.offsetWidth}px` }}
                         {...popper.attributes.popper}
                     >
-                        <Listbox.Option
-                            className={`${App.BaseButtonClassNames.replace("border", "")} text-base hover:bg-gray-200 ${selectedValue == null ? "bg-gray-200" : "bg-gray-100"}`}
-                            value={undefined}
-                        >
-                            {placeholder}
-                        </Listbox.Option>
+                        {nullable && (
+                            <Listbox.Option
+                                className={`${App.BaseButtonClassNames.replace("border", "")} text-base hover:bg-gray-200 ${selectedValue == null ? "bg-gray-200" : "bg-gray-100"}`}
+                                value={undefined}
+                            >
+                                {placeholder}
+                            </Listbox.Option>
+                        )}
                         {choices.map(({ value, label }, i) => (
                             <Listbox.Option key={i} value={value}>
                                 {({ active, selected }) => (

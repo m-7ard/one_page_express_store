@@ -5,6 +5,14 @@ import { productSerializer } from "../../backend/serializers.js";
 import { z } from "zod";
 import { RowDataPacket } from "mysql2";
 
+interface ExpectedRequest extends Request {
+    query: {
+        sort?: keyof typeof SORT_MAPPING;
+        page_index?: string;
+        [filter: string]: string | undefined;
+    };
+}
+
 const PAGE_SIZE = 24;
 const STATIC_QUERY_MAPPING: Record<string, z.ZodEffects<any, string, any>> = {
     min_price: z.coerce
@@ -21,21 +29,21 @@ const STATIC_QUERY_MAPPING: Record<string, z.ZodEffects<any, string, any>> = {
         .transform((value) => `LIKE %${value}%`),
 };
 
-const SORT_MAPPING: Record<string, string> = {
+const SORT_MAPPING = {
     newest: "id DESC",
     price_asc: "price ASC",
     price_desc: "price DESC",
     name: "name ASC",
 };
 
-export default async function list(request: Request, response: Response) {
-    const pageIndex = request.body.page_index ?? 1;
-    const { sort, ...requestQuery } = request.query;
+export default async function list(request: ExpectedRequest, response: Response) {
+    const { sort, page_index, ...requestQuery } = request.query;
+    const pageIndex = parseInt(page_index ?? "1");
     let sortStatement;
     if (sort == null) {
         sortStatement = "id DESC";
     } else {
-        sortStatement = SORT_MAPPING[sort as string] ?? "id DESC";
+        sortStatement = SORT_MAPPING[sort] ?? "id DESC";
     }
 
     let queryParams = Object.entries(requestQuery).map(([key, value]) => ({ key, value }));
@@ -69,12 +77,13 @@ export default async function list(request: Request, response: Response) {
             `SELECT * FROM product ${filterStatement} ORDER BY ${sortStatement} LIMIT ? OFFSET ?`,
             [PAGE_SIZE, PAGE_SIZE * (pageIndex - 1)],
         );
-
         return productQuery;
     });
 
     response.status(200).json({
         results: z.array(productSerializer).parse(results),
         count,
+        nextPage: PAGE_SIZE * pageIndex < count ? pageIndex + 1 : undefined,
+        previousPage: pageIndex - 1 > 0 ? pageIndex - 1 : undefined,
     });
 }

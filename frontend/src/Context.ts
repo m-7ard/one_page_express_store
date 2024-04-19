@@ -26,6 +26,8 @@ export const [AbstractDialogContext, useAbstractDialogContext] = createUseContex
 export const [QueryStringContext, useQueryStringContext] = createUseContext<{
     filterParams: React.MutableRefObject<Record<string, string>>;
     sortParams: React.MutableRefObject<Record<string, string>>;
+    page_index: React.MutableRefObject<number>;
+    buildQueryString: () => string;
 }>("useQueryStringContext has to be used within <QueryStringContext.Provider>");
 
 export const [ProductContext, useProductContext] = createUseContext<ProductType>("useProductContext has to be used within <ProductContext.Provider>");

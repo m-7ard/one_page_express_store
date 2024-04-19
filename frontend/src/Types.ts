@@ -22,4 +22,6 @@ export interface ProductType {
 export interface PaginatedQuery<T> {
     results: T[]
     count: number
+    nextPage: number | undefined;
+    previousPage: number | undefined;
 }

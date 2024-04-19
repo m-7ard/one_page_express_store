@@ -35,10 +35,20 @@ const filters: FilterType[] = rawFilters.map(({ field_name, field_value }) => ({
 export function Providers({ children }: React.PropsWithChildren) {
     const filterParams = useRef<Record<string, string>>({});
     const sortParams = useRef<Record<string, string>>({});
+    const page_index = useRef(1);
+    const buildQueryString = () =>
+        new URLSearchParams({
+            ...sortParams.current,
+            ...filterParams.current,
+            page_index: `${page_index.current}`,
+        }).toString();
+    console.log("providers rerender");
 
     return (
         <QueryClientProvider client={queryClient}>
-            <QueryStringContext.Provider value={{ filterParams, sortParams }}>{children}</QueryStringContext.Provider>
+            <QueryStringContext.Provider value={{ filterParams, sortParams, page_index, buildQueryString }}>
+                {children}
+            </QueryStringContext.Provider>
         </QueryClientProvider>
     );
 }
@@ -47,7 +57,8 @@ export default function App() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const scrollToShop = useCallback(() => scrollRef.current?.scrollIntoView(), []);
 
-    const { sortParams, filterParams } = useQueryStringContext();
+    const { sortParams, filterParams, page_index, buildQueryString } = useQueryStringContext();
+    console.log("app rerender", sortParams, filterParams, page_index);
 
     const userQuery = useQuery<User>({
         queryKey: ["user"],
@@ -66,8 +77,8 @@ export default function App() {
         queryKey: ["products"],
         throwOnError: true,
         queryFn: async () => {
-            const queryString = new URLSearchParams({ ...sortParams.current, ...filterParams.current }).toString();
-            const response = await fetch(`/api/products/list?${queryString}`, {
+            console.log(page_index.current);
+            const response = await fetch(`/api/products/list?${buildQueryString()}`, {
                 method: "GET",
             });
             if (response.ok) {
@@ -169,19 +180,66 @@ export default function App() {
                                 )}
                             </div>
                             <div className="flex justify-between items-center">
-                                <div className="text-base font-medium">Back</div>
-                                <div className="flex flex-row gap-8 items-center">
-                                    <div className="text-base">
-                                        Page
-                                    </div>
-                                    <FormListBox name="page" initial={1} choices={[
-                                        { value: 1, label: 1 },
-                                        { value: 2, label: 2 },
-                                        { value: 3, label: 3 }
-                                    ]} />
+                                <div
+                                    className={[
+                                        ...["text-base select-none", App.BaseButtonClassNames],
+                                        ...(productsQuery.data.previousPage == null
+                                            ? ["bg-gray-200 text-gray-600 border-gray-600"]
+                                            : ["hover:underline cursor-pointer"]),
+                                    ].join(" ")}
+                                    onClick={() => {
+                                        if (productsQuery.data.previousPage == null) {
+                                            return;
+                                        }
+                                        page_index.current = productsQuery.data.previousPage;
+                                        queryClient.invalidateQueries({ queryKey: ["products"] });
+                                    }}
+                                >
+                                    Back
                                 </div>
-                                <div className="text-base font-medium">Next</div>
+                                <div className="flex flex-row gap-8 items-center">
+                                    <div className="text-base">Page</div>
+                                    <FormListBox
+                                        key={page_index.current}
+                                        name="page_index"
+                                        initial={page_index.current}
+                                        choices={Array.from({
+                                            length: Math.floor(productsQuery.data.count / 24) + 1,
+                                        }).map((_, i) => {
+                                            return { value: i + 1, label: i + 1 };
+                                        })}
+                                        onChange={(value) => {
+                                            if (!(typeof value === "number")) {
+                                                throw "Ensure that the value of page is an integer.";
+                                            }
 
+                                            if (value === page_index.current) {
+                                                return;
+                                            }
+
+                                            page_index.current = value;
+                                            queryClient.invalidateQueries({ queryKey: ["products"] });
+                                        }}
+                                        nullable={false}
+                                    />
+                                </div>
+                                <div
+                                    className={[
+                                        ...["text-base select-none", App.BaseButtonClassNames],
+                                        ...(productsQuery.data.nextPage == null
+                                            ? ["bg-gray-200 text-gray-600 border-gray-600"]
+                                            : ["hover:underline cursor-pointer"]),
+                                    ].join(" ")}
+                                    onClick={() => {
+                                        if (productsQuery.data.nextPage == null) {
+                                            return;
+                                        }
+                                        page_index.current = productsQuery.data.nextPage;
+                                        queryClient.invalidateQueries({ queryKey: ["products"] });
+                                    }}
+                                >
+                                    Next
+                                </div>
                             </div>
                         </div>
                     </div>

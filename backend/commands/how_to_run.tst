@@ -1,0 +1,1 @@
+From the base directory of backend use: npx tsx --env-file=.env ./commands/{filename}.ts

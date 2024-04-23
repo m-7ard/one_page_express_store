@@ -4,10 +4,11 @@ import {
     ChevronUpDownIcon,
     PlusIcon,
     ShoppingCartIcon,
+    UserIcon,
 } from "@heroicons/react/24/solid";
 import UserPopover from "../UserPopover/UserPopover";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import React, { useCallback, useRef } from "react";
+import React, { Fragment, useCallback, useRef } from "react";
 import { AppContext, QueryStringContext, useQueryStringContext } from "../../../Context";
 import { FilterType, PaginatedQuery, ProductType, User } from "../../../Types";
 import FilterProductsDialog from "../FilterProducts/FilterProductsDialog";
@@ -90,10 +91,22 @@ export default function App() {
         productsQuery.isSuccess && (
             <AppContext.Provider value={{ user: userQuery.data, filters }}>
                 <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
-                    <div className="flex flex-row gap-4 px-4 py-2 bg-stone-700 text-gray-50 items-center shadow z-50">
-                        <div className="flex flex-row ml-auto gap-4 items-center">
-                            <UserPopover />
-                            <ShoppingCartIcon className="h-6 w-6" />
+                    <div
+                        className="flex flex-row items-center justify-between gap-8 px-8 py-4 text-gray-50 shadow z-50"
+                        style={{ backgroundColor: "#38382A" }}
+                    >
+                        <div className="w-12 h-12 relative">
+                            <img src="/static/images/logo.jpg" className="absolute w-full h-full object-cover"></img>
+                        </div>
+                        <div className="flex flex-row gap-4 items-center">
+                            <UserPopover
+                                Trigger={({ setReferenceElement }) => (
+                                    <Popover.Button ref={setReferenceElement} as={Fragment}>
+                                        <UserIcon className="w-7 h-7" />
+                                    </Popover.Button>
+                                )}
+                            />
+                            <ShoppingCartIcon className="h-7 w-7" />
                         </div>
                     </div>
                     <div className="w-full relative select-none	" style={{ backgroundColor: "rgb(223, 220, 167)" }}>
@@ -122,7 +135,7 @@ export default function App() {
                             </div>
                             <hr className="h-0 border-t border-gray-900"></hr>
                             <div className="flex flex-row items-center justify-between gap-4 text-gray-900 flex-wrap">
-                                {userQuery.data != null && userQuery.data.is_admin && (
+                                {(userQuery.data != null && userQuery.data.is_admin && (
                                     <CreateProductDialog
                                         Trigger={({ onClick }) => (
                                             <div
@@ -134,7 +147,7 @@ export default function App() {
                                             </div>
                                         )}
                                     />
-                                )}
+                                )) || <div></div>}
                                 <div className="flex flex-row items-center gap-4 text-gray-900">
                                     <SortProductsPopover
                                         Trigger={({ setReferenceElement }) => (

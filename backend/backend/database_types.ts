@@ -9,3 +9,10 @@ export interface DatabaseProduct extends RowDataPacket {
     specification: string;
     images: string;
 }
+
+export interface DatabaseUser extends RowDataPacket {
+	id: string;
+	username: string;
+	password: string;
+    is_admin: number;
+}

@@ -21,10 +21,11 @@ export async function generate_filters() {
             ) AS jt
         GROUP BY jt.field_name
     `);
+    console.log('aaaaaaaaaaaaa')
     await writeFile(path.join(BASE_DIR, "backend/filters.json"), JSON.stringify(filtersQuery));
     return filtersQuery;
 }
 
 generate_filters().then((value) => {
     console.log(`\x1b[34m${'[FINISHED]'}\x1b[0m`, value);
-}).finally(process.exit);
+}).catch((error) => console.log(error)).finally(process.exit);

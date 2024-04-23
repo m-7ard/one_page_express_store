@@ -8,7 +8,7 @@ import {
     UserIcon,
 } from "@heroicons/react/24/solid";
 import { Popover } from "@headlessui/react";
-import AbstractPopover from "../../elements/abstract/AbstractPopover";
+import AbstractPopover, { AbstractPopoverPanel, AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
 import Fieldset from "../../elements/forms/Fieldset";
 import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldWidget";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -69,32 +69,11 @@ const profileRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([loginRoute, registerRoute, profileRoute]);
 
-export default function UserPopover() {
-    const queryClient = useQueryClient();
-    const user = queryClient.getQueryData<User>(["user"]);
-    const memoryHistory = createMemoryHistory({ initialEntries: [user == null ? "/login" : "/profile"] });
-    const router = createRouter({
-        routeTree,
-        history: memoryHistory,
-    });
-
+export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigger }) {
     return (
         <AbstractPopover
-            Trigger={({ setReferenceElement }) => (
-                <Popover.Button ref={setReferenceElement} as={Fragment}>
-                    <UserIcon className="text-white w-6 h-6" />
-                </Popover.Button>
-            )}
-            Panel={({ setPopperElement, popper: { styles, attributes } }) => (
-                <Popover.Panel
-                    className="bg-gray-50 text-gray-900 p-4 mt-4 border border-gray-900 w-full max-w-72 shadow"
-                    ref={setPopperElement}
-                    style={styles.popper}
-                    {...attributes.popper}
-                >
-                    {<RouterProvider router={router} />}
-                </Popover.Panel>
-            )}
+            Trigger={Trigger}
+            Panel={UserPopover.Panel}
             options={{
                 placement: "bottom-end",
                 strategy: "fixed",
@@ -110,6 +89,29 @@ export default function UserPopover() {
         />
     );
 }
+
+UserPopover.Panel = function Panel({
+    setPopperElement,
+    popper: { styles, attributes },
+}: React.ComponentProps<AbstractPopoverPanel>) {
+    const queryClient = useQueryClient();
+    const user = queryClient.getQueryData<User>(["user"]);
+    const router = createRouter({
+        routeTree,
+        history: createMemoryHistory({ initialEntries: [user == null ? "/login" : "/profile"] }),
+    });
+
+    return (
+        <Popover.Panel
+            className="bg-gray-50 text-gray-900 p-4 mt-4 border border-gray-900 w-full max-w-72 shadow"
+            ref={setPopperElement}
+            style={styles.popper}
+            {...attributes.popper}
+        >
+            {<RouterProvider router={router} />}
+        </Popover.Panel>
+    );
+};
 
 function Login() {
     const queryClient = useQueryClient();

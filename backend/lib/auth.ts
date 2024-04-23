@@ -1,8 +1,9 @@
 import { Lucia } from "lucia";
 import { Mysql2Adapter } from "@lucia-auth/adapter-mysql";
-import { DatabaseUser, pool } from "./db.js";
+import type { DatabaseUser } from "./db.js";
+import { getFromContext } from "../backend/context.js";
 
-const adapter = new Mysql2Adapter(pool as any, {
+const adapter = new Mysql2Adapter(getFromContext('pool'), {
 	user: "user",
 	session: "user_session"
 });

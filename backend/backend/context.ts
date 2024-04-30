@@ -1,20 +1,21 @@
 import mysql from "mysql2/promise";
 
-export const context: {
-    pool: mysql.Pool | null;
-} = {
+interface Context {
+    pool: null | mysql.Pool;
+    key2: null | string;
+    key3: null | File;
+}
+
+const context: Context = {
     pool: null,
 };
 
-export function getFromContext(key: keyof typeof context) {
-    if (!context.hasOwnProperty(key)) {
-        throw Error(`"${key}" is not a valid key of context.`);
+export function getFromContext<K extends keyof Context>(key: K): NonNullable<Context[K]> {
+    const value = context[key];
+    if (value == null) {
+        throw new Error(`Value associated with key '${key}' is null`);
     }
-    if (context[key] == null) {
-        throw Error(`"${key}" is null.`);
-    }
-
-    return context[key]!;
+    return value;
 }
 
 export default context;

@@ -8,6 +8,7 @@ export interface DatabaseProduct extends RowDataPacket {
     kind: string;
     specification: string;
     images: string;
+    user_id: string;
 }
 
 export interface DatabaseUser extends RowDataPacket {

@@ -66,7 +66,6 @@ export default async function edit(request: Request, response: Response) {
             const fileNames = [...savedFileNames, ...existingImages]
                 .sort((a, b) => a.index - b.index)
                 .map(({ fileName }) => fileName);
-
             const [result, fields] = await connection.execute<ResultSetHeader>(
                 `UPDATE product
                     SET name = ?,

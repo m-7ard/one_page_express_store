@@ -1,6 +1,6 @@
 import mysql from "mysql2/promise";
 
-const context: {
+export const context: {
     pool: mysql.Pool | null;
 } = {
     pool: null,

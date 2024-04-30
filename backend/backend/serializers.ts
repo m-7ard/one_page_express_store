@@ -16,10 +16,7 @@ export const productSerializer = z.object({
     kind: z.string(),
     description: z.string(),
     price: z.number(),
-    specification: z
-        .string()
-        .transform<Record<string, string>>((value) => JSON.parse(value)),
-    images: z
-        .string()
-        .transform<string[]>((value) => JSON.parse(value)),
+    specification: z.string().transform<Record<string, string>>((value) => JSON.parse(value)),
+    images: z.string().transform<string[]>((value) => JSON.parse(value)),
+    user_id: z.string(),
 });

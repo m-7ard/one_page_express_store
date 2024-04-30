@@ -1,26 +1,28 @@
-import { Argon2id } from "oslo/password";
-import { DatabaseUser } from "../backend/database_types.js";
-import { mysqlGetOrThrow } from "../backend/utils.js";
-import { getFromContext } from "../backend/context.js";
-import { ResultSetHeader } from "mysql2";
+import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
 import { createProduct, createUser } from "./_utils.js";
 
-export async function usersMixin() {
-    const testUser = await createUser({ username: "test_user", isAdmin: true });
-    const otherUser = await createUser({ username: "other_user", isAdmin: false });
-
-    return { testUser, otherUser };
+interface UserData {
+    adminOneUser: DatabaseUser;
+    adminTwoUser: DatabaseUser;
+    customerOneUser: DatabaseUser;
 }
 
-export async function productsMixin({
-    users,
-}: {
-    users: {
-        testUser: DatabaseUser;
-        otherUser: DatabaseUser;
-    };
-}) {
-    const testUserProduct = await createProduct({
+interface ProductData {
+    adminOneUserProduct_ONE: DatabaseProduct;
+    adminTwoUserProduct_ONE: DatabaseProduct;
+    adminTwoUserProduct_TWO: DatabaseProduct;
+}
+
+export async function usersMixin(): Promise<UserData> {
+    const adminOneUser = await createUser({ username: "admin_one", is_admin: true });
+    const adminTwoUser = await createUser({ username: "admin_two", is_admin: true });
+    const customerOneUser = await createUser({ username: "customer_one", is_admin: false });
+
+    return { adminOneUser, adminTwoUser, customerOneUser };
+}
+
+export async function productsMixin({ users }: { users: UserData }): Promise<ProductData> {
+    const adminOneUserProduct_ONE = await createProduct({
         name: "Test User Product",
         description: "Test User Desc",
         price: 999,
@@ -29,10 +31,10 @@ export async function productsMixin({
             ["building", "tall"],
             ["chicken", "coop"],
         ],
-        images: ["tests/image1.jpg", "tests/image2.jpg", "tests/image3.jpg"],
-        userId: users.testUser.id,
+        images: [],
+        user_id: users.adminOneUser.id,
     });
-    const otherUserProduct1 = await createProduct({
+    const adminTwoUserProduct_ONE = await createProduct({
         name: "Test User Product",
         description: "Test User Desc",
         price: 1,
@@ -41,10 +43,10 @@ export async function productsMixin({
             ["building", "tall"],
             ["flavour", "sweet"],
         ],
-        images: ["tests/image1.jpg", "tests/image2.jpg", "tests/image3.jpg"],
-        userId: users.otherUser.id,
+        images: [],
+        user_id: users.adminTwoUser.id,
     });
-    const otherUserProduct2 = await createProduct({
+    const adminTwoUserProduct_TWO = await createProduct({
         name: "Test User Product 2",
         description: "Test User Desc",
         price: 555,
@@ -53,8 +55,9 @@ export async function productsMixin({
             ["building", "short"],
             ["flavour", "sweet"],
         ],
-        images: ["tests/image1.jpg", "tests/image2.jpg", "tests/image3.jpg"],
-        userId: users.otherUser.id,
+        images: [],
+        user_id: users.adminTwoUser.id,
     });
-    return { testUserProduct, otherUserProduct1, otherUserProduct2 };
+    
+    return { adminOneUserProduct_ONE, adminTwoUserProduct_ONE, adminTwoUserProduct_TWO };
 }

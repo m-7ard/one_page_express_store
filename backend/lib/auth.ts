@@ -17,7 +17,7 @@ export const lucia = new Lucia(adapter, {
 	getUserAttributes: (attributes) => {
 		return {
 			username: attributes.username,
-            is_admin: attributes.is_admin
+            is_admin: Boolean(attributes.is_admin)
 		};
 	}
 });

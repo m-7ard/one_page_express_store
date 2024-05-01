@@ -1,6 +1,5 @@
 import mysql, { ResultSetHeader } from "mysql2/promise";
-import { Request, Response } from "express";
-import { pool } from "../../lib/db.js";
+import { NextFunction, Request, Response } from "express";
 import { nanoid } from "nanoid";
 import { writeFile } from "fs/promises";
 import { BASE_DIR } from "../../backend/settings.js";
@@ -8,16 +7,16 @@ import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
-import { dbOperation } from "../../backend/utils.js";
+import { dbOperation, routeWithErrorHandling } from "../../backend/utils.js";
 import { rm } from "fs/promises";
 
-export default async function edit(request: Request, response: Response) {
+export default routeWithErrorHandling(async (request: Request, response: Response) => {
     if (response.locals.user == null || response.locals.user.is_admin === false) {
         response.status(403).send();
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    await dbOperation(async (connection) => {
         const { newImages, existingImages } = getImages(request);
         const validation = await productSchema
             .required()
@@ -93,4 +92,5 @@ export default async function edit(request: Request, response: Response) {
             return response.status(400).json(validation.error.flatten());
         }
     });
-}
+    return;
+})

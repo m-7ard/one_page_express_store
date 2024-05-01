@@ -2,8 +2,6 @@ import mysql from "mysql2/promise";
 
 interface Context {
     pool: null | mysql.Pool;
-    key2: null | string;
-    key3: null | File;
 }
 
 const context: Context = {

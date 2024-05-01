@@ -1,16 +1,17 @@
 import { verifyRequestOrigin } from "lucia";
 import ejs from "ejs";
-import express from "express";
+import express, { NextFunction, Request, Response } from "express";
 import { router as APIrouter } from "../api/index.js";
 import path from "path";
 import { BASE_DIR } from "./settings.js";
 import filters from "../filters.json" assert { type: "json" };
+import multer from "multer";
 
 export async function setUpApp() {
     const app = express();
     const port = 3001;
     const router = express.Router();
-    const { lucia } = await import ('../lib/auth.js');
+    const { lucia } = await import("../lib/auth.js");
 
     // Lucia Auth
     app.use(async (req, res, next) => {

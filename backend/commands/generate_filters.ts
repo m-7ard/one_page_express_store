@@ -1,8 +1,8 @@
 import { writeFile } from "fs/promises";
-import { pool } from "../lib/db.js";
-import { RowDataPacket } from "mysql2/promise";
+import mysql, { RowDataPacket } from "mysql2/promise";
 import path from "path";
 import { BASE_DIR } from "../backend/settings.js";
+import { env } from "process";
 
 export interface Filter extends RowDataPacket {
     field_name: string;
@@ -10,6 +10,13 @@ export interface Filter extends RowDataPacket {
 }
 
 export async function generate_filters() {
+    const pool = mysql.createPool({
+        host: env.HOST,
+        user: env.USER,
+        password: env.PASSWORD,
+        database: env.DATABASE,
+        multipleStatements: true,
+    });
     const [filtersQuery, fields] = await pool.query<Filter[]>(`
         SELECT jt.field_name, JSON_ARRAYAGG(DISTINCT jt.field_values) AS field_value 
             FROM product CROSS JOIN JSON_TABLE(
@@ -21,7 +28,6 @@ export async function generate_filters() {
             ) AS jt
         GROUP BY jt.field_name
     `);
-    console.log('aaaaaaaaaaaaa')
     await writeFile(path.join(BASE_DIR, "backend/filters.json"), JSON.stringify(filtersQuery));
     return filtersQuery;
 }

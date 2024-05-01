@@ -6,6 +6,7 @@ import { generateId } from "lucia";
 import { Argon2id } from "oslo/password";
 import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
 import { exec } from "child_process";
+import { AssertionError } from "assert";
 
 function dbData(): Promise<string> {
     /* 
@@ -43,14 +44,14 @@ export async function testCase<T>(callback: () => Promise<T>): Promise<T> {
             multipleStatements: true,
         });
         if (connection != null) {
-            await connection.query(`CREATE DATABASE one_page_store_TESTING`);
+            await connection.query(`CREATE DATABASE one_page_store_testing`);
 
             try {
                 const pool = mysql.createPool({
                     host: env.HOST,
                     user: env.USER,
                     password: env.PASSWORD,
-                    database: "one_page_store_TESTING",
+                    database: "one_page_store_testing",
                     multipleStatements: true,
                 });
                 context.pool = pool;
@@ -69,9 +70,9 @@ export async function testCase<T>(callback: () => Promise<T>): Promise<T> {
                     must be called in the express routes 
                 */
 
-                return await callback()
+                return await callback();
             } finally {
-                connection.query(`DROP DATABASE one_page_store_TESTING`);
+                await connection.query(`DROP DATABASE one_page_store_testing`);
             }
         }
 
@@ -79,8 +80,49 @@ export async function testCase<T>(callback: () => Promise<T>): Promise<T> {
     } catch (error) {
         console.log(error);
     } finally {
-        connection?.end();
+        await connection?.end();
         process.exit();
+    }
+}
+
+export function dbSave(): Promise<string> {
+    /* 
+        Requires mysql / mariaDB to be added as a PATH variable. 
+    */
+    const command = `mysqldump -u ${env.USER} -p${env.PASSWORD} -h ${env.HOST} "one_page_store_testing" --opt --replace --add-drop-database	`;
+
+    return new Promise((resolve, reject) => {
+        exec(command, (error, stdout, stderr) => {
+            if (error) {
+                reject(error);
+                return;
+            }
+            if (stderr) {
+                reject(stderr);
+                return;
+            }
+            resolve(stdout);
+        });
+    });
+}
+
+export async function test<T>(tester: () => Promise<T>, name: string) {
+    const timestamp = `\x1b[33m${new Date().toLocaleTimeString()}\x1b[0m`;
+    const divider = "=".repeat(process.stdout.columns);
+    const savedDB = await dbSave();
+    const pool = getFromContext("pool");
+
+    try {
+        await tester();
+        console.log(`[${timestamp}] TEST [${name}] \x1b[33mSUCCESS\x1b[0m\n${divider}`);
+    } catch (error) {
+        if (error instanceof AssertionError) {
+            console.log(`[${timestamp}] TEST [${name}] \x1b[31mFAILED\x1b[31m \x1b[0m\n${error}\n${divider}`);
+        } else {
+            console.log(`[${timestamp}] TEST [${name}] \x1b[31mERROR\x1b[31m \x1b[0m\n${error}\n${divider}`);
+        }
+    } finally {
+        await pool.query(savedDB);
     }
 }
 

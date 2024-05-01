@@ -2,6 +2,7 @@ import mysql, { FieldPacket, RowDataPacket } from "mysql2/promise";
 import { getFromContext } from "./context.js";
 import { NextFunction, Request, Response } from "express";
 import fsp from "fs/promises";
+import multer from "multer";
 
 export async function dbOperation<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     let connection: mysql.PoolConnection | null = null;
@@ -59,6 +60,9 @@ export function routeWithErrorHandling(
         try {
             await callback(request, response, next);
         } catch (error) {
+            if (error instanceof multer.MulterError) {
+                response.status(500).send(error.message);
+            }
             next(error);
         }
     };

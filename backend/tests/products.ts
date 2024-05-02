@@ -5,7 +5,7 @@ import { z } from "zod";
 import { productsMixin, usersMixin } from "./mixins.js";
 import { fileExists, mysqlGetOrNull, mysqlGetOrThrow, mysqlGetQuery } from "../backend/utils.js";
 import { DatabaseProduct } from "../backend/database_types.js";
-import { getFromContext } from "../backend/context.js";
+import context, { getFromContext } from "../backend/context.js";
 import { env } from "process";
 import { rm } from "fs/promises";
 import { BASE_DIR, MEDIA_DIR } from "../backend/settings.js";
@@ -20,6 +20,8 @@ const EXPECTED_PRICE_UNDER_500_PRODUCT_COUNT = 1;
 const EXPECTED_SPEC_BUILDING_IS_TALL = 2;
 const DEFAULT_ORDER_BY = "id DESC";
 const REQUIRED_PRODUCT_FIELDS = ["name", "description", "price", "kind", "specification"];
+
+context.testsToRun = ["List Products Without Query"];
 
 testCase(async () => {
     const pool = getFromContext("pool");

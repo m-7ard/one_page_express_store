@@ -2,10 +2,12 @@ import mysql from "mysql2/promise";
 
 interface Context {
     pool: null | mysql.Pool;
+    testsToRun: null | '__all__' | string[]
 }
 
 const context: Context = {
     pool: null,
+    testsToRun: null
 };
 
 export function getFromContext<K extends keyof Context>(key: K): NonNullable<Context[K]> {

@@ -1,4 +1,4 @@
-import { mysqlGetOrThrow } from "../backend/utils.js";
+import { blueText, greenText, mysqlGetOrThrow, redText } from "../backend/utils.js";
 import mysql, { ResultSetHeader } from "mysql2/promise";
 import { env } from "process";
 import context, { getFromContext } from "../backend/context.js";
@@ -109,17 +109,24 @@ export function dbSave(): Promise<string> {
 export async function test<T>(tester: () => Promise<T>, name: string) {
     const timestamp = `\x1b[33m${new Date().toLocaleTimeString()}\x1b[0m`;
     const divider = "=".repeat(process.stdout.columns);
+    const testsToRun = getFromContext('testsToRun');
+
+    if (testsToRun !== '__all__' && !(testsToRun.includes(name))) {
+        console.log(`[${timestamp}] TEST [${name}] ${blueText('SKIPPED')}\n${divider}`);
+        return;
+    }
+
     const savedDB = await dbSave();
     const pool = getFromContext("pool");
 
     try {
         await tester();
-        console.log(`[${timestamp}] TEST [${name}] \x1b[33mSUCCESS\x1b[0m\n${divider}`);
+        console.log(`[${timestamp}] TEST [${name}] ${greenText('SUCCESS')}\n${divider}`);
     } catch (error) {
         if (error instanceof AssertionError) {
-            console.log(`[${timestamp}] TEST [${name}] \x1b[31mFAILED\x1b[31m \x1b[0m\n${error}\n${divider}`);
+            console.log(`[${timestamp}] TEST [${name}] ${redText('FAILED')} ${error}${divider}`);
         } else {
-            console.log(`[${timestamp}] TEST [${name}] \x1b[31mERROR\x1b[31m \x1b[0m\n${error}\n${divider}`);
+            console.log(`[${timestamp}] TEST [${name}] ${redText('ERROR')} ${error}${divider}`);
         }
     } finally {
         await pool.query(savedDB);

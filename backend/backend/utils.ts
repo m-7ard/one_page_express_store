@@ -75,3 +75,15 @@ export async function fileExists(path: string) {
         return false;
     }
 }
+
+export function blueText(text: string) {
+    return `\x1b[34m${text}\x1b[0m`
+}
+
+export function redText(text: string) {
+    return `\x1b[31m${text}\x1b[31m`
+}
+
+export function greenText(text: string) {
+    return `\x1b[33m${text}\x1b[0m`
+}

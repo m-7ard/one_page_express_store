@@ -35,8 +35,8 @@
 
 `Unit Testing`
 > [!IMPORTANT]
-> This project utilitzes globally installed TSX to run unit tests written in Typescript.
-> You can instal it here: https://www.npmjs.com/package/tsx
+> This project utilitses globally installed TSX to run unit tests written in Typescript.
+> You can install it here: https://www.npmjs.com/package/tsx
 
 
 Due to clashes in configuration between typescript, express and popular unit testing modules (such as Jest or Mocha), this project utilises expandable unit tests written by the author. The unit tests hierarchy is as follows:

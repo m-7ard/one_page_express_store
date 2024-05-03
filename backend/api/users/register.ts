@@ -28,6 +28,13 @@ const schema = z.object({
 });
 
 export default async function register(request: Request, response: Response) {
+    if (response.locals.session) {
+        response.status(403).json({
+            formErrors: ['You are currently logged in. Please log out before registering a new account.'],
+        } as z.typeToFlattenedError<string, string>);
+        return;
+    }
+ 
     await dbOperation(async (connection) => {
         const validation = await schema.safeParseAsync(request.body);
         if (validation.success === true) {

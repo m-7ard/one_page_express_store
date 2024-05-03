@@ -109,10 +109,10 @@ export function dbSave(): Promise<string> {
 export async function test<T>(tester: () => Promise<T>, name: string) {
     const timestamp = `\x1b[33m${new Date().toLocaleTimeString()}\x1b[0m`;
     const divider = "=".repeat(process.stdout.columns);
-    const testsToRun = getFromContext('testsToRun');
+    const testsToRun = getFromContext("testsToRun");
 
-    if (testsToRun !== '__all__' && !(testsToRun.includes(name))) {
-        console.log(`[${timestamp}] TEST [${name}] ${blueText('SKIPPED')}\n${divider}`);
+    if (testsToRun !== "__all__" && !testsToRun.includes(name)) {
+        console.log(`[${timestamp}] TEST [${name}] ${blueText("SKIPPED")}\n${divider}`);
         return;
     }
 
@@ -121,24 +121,32 @@ export async function test<T>(tester: () => Promise<T>, name: string) {
 
     try {
         await tester();
-        console.log(`[${timestamp}] TEST [${name}] ${greenText('SUCCESS')}\n${divider}`);
+        console.log(`[${timestamp}] TEST [${name}] ${greenText("SUCCESS")}\n${divider}`);
     } catch (error) {
         if (error instanceof AssertionError) {
-            console.log(`[${timestamp}] TEST [${name}] ${redText('FAILED')} ${error}${divider}`);
+            console.log(`[${timestamp}] TEST [${name}] ${redText("FAILED")} ${error}\n${divider}`);
         } else {
-            console.log(`[${timestamp}] TEST [${name}] ${redText('ERROR')} ${error}${divider}`);
+            console.log(`[${timestamp}] TEST [${name}] ${redText("ERROR")} ${error}\n${divider}`);
         }
     } finally {
         await pool.query(savedDB);
     }
 }
 
-export async function createUser({ username, is_admin }: { username: string; is_admin: boolean }) {
+export async function createUser({
+    username,
+    is_admin,
+    password,
+}: {
+    username: string;
+    is_admin: boolean;
+    password: string;
+}) {
     const pool = getFromContext("pool");
     const userData = {
         id: generateId(15),
         username: username,
-        hashed_password: await new Argon2id().hash("userword"),
+        hashed_password: await new Argon2id().hash(password),
         is_admin: is_admin ? 1 : 0,
     };
 
@@ -156,7 +164,7 @@ export async function createUser({ username, is_admin }: { username: string; is_
         }),
     );
 
-    return user;
+    return { ...user, password };
 }
 
 export async function createProduct({

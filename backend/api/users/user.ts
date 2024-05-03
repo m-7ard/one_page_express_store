@@ -5,5 +5,5 @@ export default async function user(request: Request, response: Response, next: N
     if (response.locals.user == null) {
         return response.status(403).send();
     }
-    return response.status(200).json(userSerializer.parse(response.locals.user));
+    return response.status(200).json(response.locals.user);
 }

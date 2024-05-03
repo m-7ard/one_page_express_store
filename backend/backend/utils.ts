@@ -81,7 +81,7 @@ export function blueText(text: string) {
 }
 
 export function redText(text: string) {
-    return `\x1b[31m${text}\x1b[31m`
+    return `\x1b[31m${text}\x1b[0m`
 }
 
 export function greenText(text: string) {

@@ -2,6 +2,7 @@ import { Lucia } from "lucia";
 import { Mysql2Adapter } from "@lucia-auth/adapter-mysql";
 import type { DatabaseUser } from "./db.js";
 import { getFromContext } from "../backend/context.js";
+import { userSerializer } from "../backend/serializers.js";
 
 const adapter = new Mysql2Adapter(getFromContext('pool'), {
 	user: "user",
@@ -15,10 +16,9 @@ export const lucia = new Lucia(adapter, {
 		}
 	},
 	getUserAttributes: (attributes) => {
-		return {
-			username: attributes.username,
-            is_admin: Boolean(attributes.is_admin)
-		};
+		return userSerializer.partial({
+            id: true
+        }).parse(attributes);
 	}
 });
 

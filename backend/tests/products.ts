@@ -21,7 +21,7 @@ const EXPECTED_SPEC_BUILDING_IS_TALL = 2;
 const DEFAULT_ORDER_BY = "id DESC";
 const REQUIRED_PRODUCT_FIELDS = ["name", "description", "price", "kind", "specification"];
 
-context.testsToRun = ["List Products Without Query"];
+context.testsToRun = '__all__';
 
 testCase(async () => {
     const pool = getFromContext("pool");

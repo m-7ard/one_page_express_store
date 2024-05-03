@@ -14,9 +14,9 @@ interface ProductData {
 }
 
 export async function usersMixin(): Promise<UserData> {
-    const adminOneUser = await createUser({ username: "admin_one", is_admin: true });
-    const adminTwoUser = await createUser({ username: "admin_two", is_admin: true });
-    const customerOneUser = await createUser({ username: "customer_one", is_admin: false });
+    const adminOneUser = await createUser({ username: "admin_one", is_admin: true, password: "adminword" });
+    const adminTwoUser = await createUser({ username: "admin_two", is_admin: true, password: "adminword" });
+    const customerOneUser = await createUser({ username: "customer_one", is_admin: false, password: "userword" });
 
     return { adminOneUser, adminTwoUser, customerOneUser };
 }

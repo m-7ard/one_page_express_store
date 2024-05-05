@@ -83,7 +83,7 @@ export default async function list(request: ExpectedRequest, response: Response)
     response.status(200).json({
         results: z.array(productSerializer).parse(results),
         count,
-        nextPage: PAGE_SIZE * pageIndex < count ? pageIndex + 1 : undefined,
-        previousPage: pageIndex - 1 > 0 ? pageIndex - 1 : undefined,
+        nextPage: PAGE_SIZE * pageIndex < count ? pageIndex + 1 : null,
+        previousPage: pageIndex - 1 > 0 ? pageIndex - 1 : null,
     });
 }

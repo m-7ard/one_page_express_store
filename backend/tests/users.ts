@@ -1,5 +1,5 @@
 import { createSessionCookie, objectToFormData, test, testCase } from "./_utils.js";
-import { productSerializer, userSerializer } from "../backend/serializers.js";
+import { userSerializer } from "../backend/serializers.js";
 import assert from "assert";
 import { z } from "zod";
 import { productsMixin, usersMixin } from "./mixins.js";

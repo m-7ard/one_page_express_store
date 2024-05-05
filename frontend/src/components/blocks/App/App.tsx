@@ -17,6 +17,7 @@ import Product from "./Product/Product";
 import { Popover } from "@headlessui/react";
 import SortProductsPopover from "../SortProductsPopover/SortProductsPopover";
 import { FormListBox } from "../../elements/forms/widgets/FormListBox";
+import { PageNavigation } from "./PageNavigation";
 
 const queryClient = new QueryClient({
     defaultOptions: {
@@ -43,7 +44,6 @@ export function Providers({ children }: React.PropsWithChildren) {
             ...filterParams.current,
             page_index: `${page_index.current}`,
         }).toString();
-    console.log("providers rerender");
 
     return (
         <QueryClientProvider client={queryClient}>
@@ -76,7 +76,6 @@ export default function App() {
         queryKey: ["products"],
         throwOnError: true,
         queryFn: async () => {
-            console.log(page_index.current);
             const response = await fetch(`/api/products/list?${buildQueryString()}`, {
                 method: "GET",
             });
@@ -91,22 +90,35 @@ export default function App() {
         productsQuery.isSuccess && (
             <AppContext.Provider value={{ user: userQuery.data, filters }}>
                 <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
-                    <div
-                        className="flex flex-row items-center justify-between gap-8 px-8 py-4 text-gray-50 shadow z-50"
-                        style={{ backgroundColor: "#38382A" }}
-                    >
-                        <div className="w-12 h-12 relative">
-                            <img src="/static/images/logo.jpg" className="absolute w-full h-full object-cover"></img>
-                        </div>
+                    <div className="flex flex-row items-center relative justify-between gap-8 px-4 py-2 text-gray-50 shadow z-50 bg-[#38382A] border-b border-[#23231A]">
+                        <div></div>
                         <div className="flex flex-row gap-4 items-center">
                             <UserPopover
-                                Trigger={({ setReferenceElement }) => (
+                                Trigger={({ setReferenceElement, open }) => (
                                     <Popover.Button ref={setReferenceElement} as={Fragment}>
-                                        <UserIcon className="w-7 h-7" />
+                                        <div
+                                            className={[
+                                                App.BaseButtonClassNames,
+                                                "border shadow hover:shadow-none border-[#23231A] hover:bg-[#38382A] hover:text-gray-200",
+                                                open === true ? 'bg-[#38382A] text-gray-200' : 'bg-[#464635]'
+                                            ].join(" ")}
+                                        >
+                                            <div>User</div>
+                                            <UserIcon className="h-5 w-5" />
+                                        </div>
                                     </Popover.Button>
                                 )}
                             />
-                            <ShoppingCartIcon className="h-7 w-7" />
+                            <div
+                                className={[
+                                    App.BaseButtonClassNames,
+                                    "border shadow hover:shadow-none border-[#23231A] hover:bg-[#38382A] hover:text-gray-200",
+                                    'bg-[#464635]'
+                                ].join(" ")}
+                            >
+                                <div>Cart</div>
+                                <ShoppingCartIcon className="h-5 w-5" />
+                            </div>
                         </div>
                     </div>
                     <div className="w-full relative select-none	" style={{ backgroundColor: "rgb(223, 220, 167)" }}>
@@ -190,68 +202,7 @@ export default function App() {
                                     },
                                 )}
                             </div>
-                            <div className="flex gap-2 justify-between items-center">
-                                <div
-                                    className={[
-                                        ...["text-base select-none", App.BaseButtonClassNames],
-                                        ...(productsQuery.data.previousPage == null
-                                            ? ["bg-gray-200 text-gray-600 border-gray-600"]
-                                            : ["hover:underline cursor-pointer"]),
-                                    ].join(" ")}
-                                    onClick={() => {
-                                        if (productsQuery.data.previousPage == null) {
-                                            return;
-                                        }
-                                        page_index.current = productsQuery.data.previousPage;
-                                        queryClient.invalidateQueries({ queryKey: ["products"] });
-                                    }}
-                                >
-                                    Back
-                                </div>
-                                <div className="flex flex-row gap-2 items-center">
-                                    <div className="text-base">Page</div>
-                                    <FormListBox
-                                        key={page_index.current}
-                                        name="page_index"
-                                        initial={page_index.current}
-                                        choices={Array.from({
-                                            length: Math.floor(productsQuery.data.count / 24) + 1,
-                                        }).map((_, i) => {
-                                            return { value: i + 1, label: i + 1 };
-                                        })}
-                                        onChange={(value) => {
-                                            if (!(typeof value === "number")) {
-                                                throw "Ensure that the value of page is an integer.";
-                                            }
-
-                                            if (value === page_index.current) {
-                                                return;
-                                            }
-
-                                            page_index.current = value;
-                                            queryClient.invalidateQueries({ queryKey: ["products"] });
-                                        }}
-                                        nullable={false}
-                                    />
-                                </div>
-                                <div
-                                    className={[
-                                        ...["text-base select-none", App.BaseButtonClassNames],
-                                        ...(productsQuery.data.nextPage == null
-                                            ? ["bg-gray-200 text-gray-600 border-gray-600"]
-                                            : ["hover:underline cursor-pointer"]),
-                                    ].join(" ")}
-                                    onClick={() => {
-                                        if (productsQuery.data.nextPage == null) {
-                                            return;
-                                        }
-                                        page_index.current = productsQuery.data.nextPage;
-                                        queryClient.invalidateQueries({ queryKey: ["products"] });
-                                    }}
-                                >
-                                    Next
-                                </div>
-                            </div>
+                            <PageNavigation />
                         </div>
                     </div>
                 </div>

@@ -69,7 +69,7 @@ const profileRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([loginRoute, registerRoute, profileRoute]);
 
-export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigger }) {
+export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigger, open?: boolean }) {
     return (
         <AbstractPopover
             Trigger={Trigger}

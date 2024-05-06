@@ -1,6 +1,6 @@
 import { InputHTMLAttributes, useEffect, useState } from "react";
 import { asWidget } from "../../../../utils";
-import App from "../../../blocks/App/App";
+import App from "../../../blocks/Frontpage/Frontpage";
 
 interface FormCharFieldProps
     extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {

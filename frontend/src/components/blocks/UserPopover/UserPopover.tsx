@@ -27,7 +27,7 @@ import { FormErrors } from "./components/forms/GenericForm";
 import { User } from "../../../Types";
 import { useAppContext } from "../../../Context";
 import { createUseContext, useGenericForm } from "../../../utils";
-import App from "../App/App";
+import App from "../Frontpage/Frontpage";
 
 const [AuthContext, useAuthContext] = createUseContext<{
     user: User;

@@ -1,9 +1,9 @@
 import { ProductType } from "../../../../Types";
-import EditProductDialog from "../../Product/edit/EditProductDialog";
+import EditProductDialog from "./EditProductDialog";
 import { ProductContext, useAppContext } from "../../../../Context";
-import InformationDisplayDialog from "../../Product/info/ProductInformationDisplayDialog";
-import DeleteProductDialog from "../../Product/delete/DeleteProductDialog";
-import App from "../App";
+import DeleteProductDialog from "./DeleteProductDialog";
+import App from "../Frontpage";
+import InformationDisplayDialog from "./ProductInformationDisplayDialog";
 
 export default function Product({ name, price, images, description, kind, specification, id }: ProductType) {
     const { user } = useAppContext();

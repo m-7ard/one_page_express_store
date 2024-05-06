@@ -1,11 +1,11 @@
 import { FunnelIcon as SolidFunnelIcon } from "@heroicons/react/24/solid";
 import { FunnelIcon as OutlineFunnelIcon } from "@heroicons/react/24/outline";
-import { useQueryStringContext } from "../../../Context";
+import { useQueryStringContext } from "../../../../Context";
 import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import AbstractPopover, { AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
-import { PaginatedQuery, ProductType } from "../../../Types";
-import App from "../App/App";
+import AbstractPopover, { AbstractPopoverTrigger } from "../../../elements/abstract/AbstractPopover";
+import { PaginatedQuery, ProductType } from "../../../../Types";
+import App from "../Frontpage";
 
 const CHOICES = [
     { label: "Newest", value: "newest" },
@@ -16,7 +16,7 @@ const CHOICES = [
 
 export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopoverTrigger }) {
     const queryClient = useQueryClient();
-    const { sortParams, filterParams } = useQueryStringContext();
+    const { sortParams, filterParams, page_index } = useQueryStringContext();
     const mutation = useMutation({
         mutationFn: async ({ value }: { value: string }) => {
             sortParams.current = { sort: value };
@@ -34,6 +34,7 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
         },
         onSuccess: (data) => {
             queryClient.setQueryData(["products"], () => data);
+            page_index.current = 1;
         },
     });
 
@@ -62,7 +63,6 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
                                 key={value}
                                 onClick={() => {
                                     mutation.mutate({ value });
-                                    close();
                                 }}
                             >
                                 <div className="whitespace-nowrap">{label}</div>

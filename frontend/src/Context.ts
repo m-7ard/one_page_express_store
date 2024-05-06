@@ -10,13 +10,13 @@ interface AppContextInterface {
 export const AppContext = createContext<AppContextInterface | null>(null);
 
 export const useAppContext = (): AppContextInterface => {
-    const appContextValue = useContext(AppContext);
+    const AppContextValue = useContext(AppContext);
 
-    if (appContextValue == null) {
-        throw new Error("useAppContext has to be used within <UserContext.Provider>");
+    if (AppContextValue == null) {
+        throw new Error("useAppContext has to be used within <AppContext.Provider>");
     }
 
-    return appContextValue;
+    return AppContextValue;
 };
 
 export const [AbstractDialogContext, useAbstractDialogContext] = createUseContext<{

@@ -2,7 +2,7 @@ import { Listbox } from "@headlessui/react";
 import React, { useEffect, useState } from "react";
 import { asWidget, createUseContext } from "../../../../utils";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
-import App from "../../../blocks/App/App";
+import App from "../../../blocks/Frontpage/Frontpage";
 import { usePopper } from "react-popper-2";
 
 export type Value = string;

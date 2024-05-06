@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import { asWidget, useGetIncrementalID } from "../../../../utils";
 import { BackspaceIcon, XCircleIcon } from "@heroicons/react/24/solid";
-import App from "../../../blocks/App/App";
+import App from "../../../blocks/Frontpage/Frontpage";
 
 type Entry = [string, string];
 type SpecificationValue = Record<string, Entry>;

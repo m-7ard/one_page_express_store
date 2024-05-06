@@ -1,11 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
-import App from "./App";
+import App from "./Frontpage";
 import { PaginatedQuery, ProductType } from "../../../Types";
 import { UncontrolledGenericListbox } from "../../elements/widgets/GenericListbox/UncontrolledGenericListbox";
 import { useQueryStringContext } from "../../../Context";
 
 export function PageNavigation() {
-    const { page_index, buildQueryString } = useQueryStringContext();
+    const { page_index } = useQueryStringContext();
     const queryClient = useQueryClient();
     const productsQuery = queryClient.getQueryData<PaginatedQuery<ProductType>>(["products"])!;
 

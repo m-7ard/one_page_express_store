@@ -1,15 +1,15 @@
 import { XMarkIcon } from "@heroicons/react/24/solid";
-import { useAbstractDialogContext, useAppContext, useQueryStringContext } from "../../../Context";
-import AbstractDialog, { AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
+import { useAbstractDialogContext, useAppContext, useQueryStringContext } from "../../../../Context";
+import AbstractDialog, { AbstractDialogTrigger } from "../../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
-import Fieldset from "../../elements/forms/Fieldset";
-import FormListBoxWidget from "../../elements/forms/widgets/FormListBox";
-import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldWidget";
-import FormField from "../../elements/forms/FormField";
+import Fieldset from "../../../elements/forms/Fieldset";
+import FormListBoxWidget from "../../../elements/forms/widgets/FormListBox";
+import { FormCharFieldWidget } from "../../../elements/forms/widgets/FormCharFieldWidget";
+import FormField from "../../../elements/forms/FormField";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { PaginatedQuery, ProductType } from "../../../Types";
-import App from "../App/App";
+import { PaginatedQuery, ProductType } from "../../../../Types";
+import App from "../Frontpage";
 
 export default function FilterProductsDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
     return (

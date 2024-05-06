@@ -18,7 +18,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { ProductType } from "../../../../Types";
 import { useAbstractDialogContext, useProductContext } from "../../../../Context";
-import App from "../../App/App";
+import App from "../Frontpage";
 import GenericForm from "../../../elements/forms/GenericForm";
 
 const rootRoute = createRootRoute({

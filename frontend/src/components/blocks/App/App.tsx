@@ -1,4 +1,4 @@
-import { ShoppingCartIcon, UserIcon } from "@heroicons/react/24/solid";
+import { DocumentTextIcon, ShoppingCartIcon, UserIcon } from "@heroicons/react/24/solid";
 import UserPopover from "../UserPopover/UserPopover";
 import { useQuery } from "@tanstack/react-query";
 import React, { Fragment, useRef } from "react";
@@ -6,6 +6,7 @@ import { AppContext } from "../../../Context";
 import { FilterType, PaginatedQuery, ProductType, User } from "../../../Types";
 import { Outlet } from "@tanstack/react-router";
 import { Popover } from "@headlessui/react";
+import RouteNavigator from "./RouteNavigator";
 
 const rawFilters: { field_name: string; field_value: string }[] = JSON.parse(
     document.getElementById("filters")?.innerText ?? "[]",
@@ -34,8 +35,26 @@ export default function App() {
             <AppContext.Provider value={{ user: userQuery.data, filters }}>
                 <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
                     <div className="flex flex-row items-center relative justify-between gap-8 px-4 py-2 text-gray-50 shadow z-50 bg-[#38382A] border-b border-[#23231A]">
-                        <div></div>
                         <div className="flex flex-row gap-4 items-center">
+                            <RouteNavigator 
+                                Trigger={({ setReferenceElement, open }) => (
+                                    <Popover.Button ref={setReferenceElement} as={Fragment}>
+                                        <div
+                                            className={[
+                                                App.BaseButtonClassNames,
+                                                "border shadow hover:shadow-none border-[#23231A] hover:bg-[#38382A] hover:text-gray-200",
+                                                open === true ? "bg-[#38382A] text-gray-200" : "bg-[#464635]",
+                                            ].join(" ")}
+                                        >
+                                            <div className="hidden sm:block">Navigate</div>
+                                            <DocumentTextIcon className="h-5 w-5" />
+                                        </div>
+                                    </Popover.Button>
+                                )}
+                            />
+                        </div>
+                        <div className="flex flex-row gap-4 items-center">
+                            
                             <UserPopover
                                 Trigger={({ setReferenceElement, open }) => (
                                     <Popover.Button ref={setReferenceElement} as={Fragment}>
@@ -46,7 +65,7 @@ export default function App() {
                                                 open === true ? "bg-[#38382A] text-gray-200" : "bg-[#464635]",
                                             ].join(" ")}
                                         >
-                                            <div>User</div>
+                                            <div className="hidden sm:block">User</div>
                                             <UserIcon className="h-5 w-5" />
                                         </div>
                                     </Popover.Button>
@@ -59,7 +78,7 @@ export default function App() {
                                     "bg-[#464635]",
                                 ].join(" ")}
                             >
-                                <div>Cart</div>
+                                <div className="hidden sm:block">Cart</div>
                                 <ShoppingCartIcon className="h-5 w-5" />
                             </div>
                         </div>

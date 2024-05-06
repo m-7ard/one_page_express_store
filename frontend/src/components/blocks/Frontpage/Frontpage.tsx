@@ -3,12 +3,9 @@ import {
     ArrowDownIcon,
     ChevronUpDownIcon,
     PlusIcon,
-    ShoppingCartIcon,
-    UserIcon,
 } from "@heroicons/react/24/solid";
-import UserPopover from "../UserPopover/UserPopover";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { Fragment, useCallback, useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { QueryStringContext, useQueryStringContext } from "../../../Context";
 import { PaginatedQuery, ProductType, User } from "../../../Types";
 import FilterProductsDialog from "./Product/FilterProductsDialog";
@@ -17,6 +14,8 @@ import Product from "./Product/Product";
 import { Popover } from "@headlessui/react";
 import SortProductsPopover from "./Product/SortProductsPopover";
 import { PageNavigation } from "./PageNavigation";
+import App from "../App/App";
+
 
 export function QueryStringProvider({ children }: React.PropsWithChildren) {
     const filterParams = useRef<Record<string, string>>({});
@@ -90,7 +89,7 @@ export default function Frontpage() {
                                 <CreateProductDialog
                                     Trigger={({ onClick }) => (
                                         <div
-                                            className={`${Frontpage.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
                                             onClick={onClick}
                                         >
                                             <div>Add</div>
@@ -103,7 +102,7 @@ export default function Frontpage() {
                                 <SortProductsPopover
                                     Trigger={({ setReferenceElement }) => (
                                         <Popover.Button
-                                            className={`${Frontpage.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
                                             ref={setReferenceElement}
                                         >
                                             <div>Sort</div>
@@ -114,7 +113,7 @@ export default function Frontpage() {
                                 <FilterProductsDialog
                                     Trigger={({ onClick }) => (
                                         <div
-                                            className={`${Frontpage.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
                                             onClick={onClick}
                                         >
                                             <div>Filter</div>
@@ -148,12 +147,3 @@ export default function Frontpage() {
         )
     );
 }
-
-Frontpage.BaseButtonClassNames =
-    "flex gap-2 px-4 py-2 items-center leading-none content-box transition-colors cursor-pointer border border-gray-900 select-none";
-
-Frontpage.InputWrapperClassNames =
-    "after:content-['.'] flex p-2 leading-none content-box border border-gray-900 text-gray-900 relative";
-Frontpage.InputElementClassNames = "absolute inset-0 transition-colors p-2";
-
-Frontpage.Divider = () => <hr className="h-0 w-full border-b-px border-gray-900"></hr>;

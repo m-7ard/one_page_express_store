@@ -1,12 +1,4 @@
 import React, { Fragment, PropsWithChildren } from "react";
-import {
-    ArchiveBoxIcon,
-    ArrowRightCircleIcon,
-    ChevronDoubleRightIcon,
-    ChevronRightIcon,
-    Cog6ToothIcon,
-    UserIcon,
-} from "@heroicons/react/24/solid";
 import { Popover } from "@headlessui/react";
 import AbstractPopover, { AbstractPopoverPanel, AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
 import Fieldset from "../../elements/forms/Fieldset";
@@ -27,7 +19,7 @@ import { FormErrors } from "./components/forms/GenericForm";
 import { User } from "../../../Types";
 import { useAppContext } from "../../../Context";
 import { createUseContext, useGenericForm } from "../../../utils";
-import App from "../Frontpage/Frontpage";
+import App from "../App/App";
 
 const [AuthContext, useAuthContext] = createUseContext<{
     user: User;
@@ -103,7 +95,7 @@ UserPopover.Panel = function Panel({
 
     return (
         <Popover.Panel
-            className="bg-gray-50 text-gray-900 p-4 mt-4 border border-gray-900 w-full max-w-72 shadow"
+            className="bg-gray-50 text-gray-900 p-4 mt-2 border border-gray-900 w-full max-w-72 shadow"
             ref={setPopperElement}
             style={styles.popper}
             {...attributes.popper}

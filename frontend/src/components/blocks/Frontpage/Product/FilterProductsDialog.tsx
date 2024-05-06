@@ -9,7 +9,7 @@ import FormField from "../../../elements/forms/FormField";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { PaginatedQuery, ProductType } from "../../../../Types";
-import App from "../Frontpage";
+import App from "../../App/App";
 
 export default function FilterProductsDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
     return (

@@ -22,9 +22,9 @@ import { useGenericForm } from "../../../../utils";
 import Fieldset from "../../../elements/forms/Fieldset";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { PaginatedQuery, ProductType } from "../../../../Types";
+import { ProductType } from "../../../../Types";
 import { useAbstractDialogContext } from "../../../../Context";
-import App from "../Frontpage";
+import App from "../../App/App";
 
 const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
 const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];

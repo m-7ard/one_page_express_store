@@ -1,11 +1,10 @@
 import { FunnelIcon as SolidFunnelIcon } from "@heroicons/react/24/solid";
-import { FunnelIcon as OutlineFunnelIcon } from "@heroicons/react/24/outline";
 import { useQueryStringContext } from "../../../../Context";
 import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import AbstractPopover, { AbstractPopoverTrigger } from "../../../elements/abstract/AbstractPopover";
 import { PaginatedQuery, ProductType } from "../../../../Types";
-import App from "../Frontpage";
+import App from "../../App/App";
 
 const CHOICES = [
     { label: "Newest", value: "newest" },

@@ -2,7 +2,7 @@ import { ProductType } from "../../../../Types";
 import EditProductDialog from "./EditProductDialog";
 import { ProductContext, useAppContext } from "../../../../Context";
 import DeleteProductDialog from "./DeleteProductDialog";
-import App from "../Frontpage";
+import App from "../../App/App";
 import InformationDisplayDialog from "./ProductInformationDisplayDialog";
 
 export default function Product({ name, price, images, description, kind, specification, id }: ProductType) {

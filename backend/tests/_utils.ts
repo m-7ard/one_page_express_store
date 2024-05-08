@@ -7,7 +7,8 @@ import { Argon2id } from "oslo/password";
 import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
 import { exec } from "child_process";
 import { AssertionError } from "assert";
-import { User } from "../backend/managers.js";
+import { Product, User } from "../backend/managers.js";
+import { productSchema } from "../backend/schemas.js";
 
 function dbData(): Promise<string> {
     /* 
@@ -160,39 +161,30 @@ export async function createProduct({
     name,
     price,
     user_id,
-    specification,
-    images,
     kind,
+    specification = [],
+    existingImages = [],
     description = "lorem ipsum",
 }: {
     name: string;
     price: number;
     user_id: string;
     specification: Array<[string, string]>;
-    images: string[];
+    existingImages: string[];
     kind: string;
     description?: string;
 }) {
     const pool = getFromContext("pool");
-    const productData = {
-        name: name,
-        description: description,
-        price: price,
-        kind: kind,
-        specification: JSON.stringify(specification),
-        images: JSON.stringify(images),
-        user_id: user_id,
-    };
-
-    const result = await pool.execute<ResultSetHeader>({
-        sql: `INSERT INTO PRODUCT (name, description, price, kind, specification, images, user_id) 
-            VALUES (:name, :description, :price, :kind, :specification, :images, :user_id)`,
-        values: productData,
-        namedPlaceholders: true,
+    const productId = await Product.create({
+        name,
+        description,
+        price,
+        kind,
+        newImages: [],
+        existingImages: existingImages.map((fileName, index) => ({ index, fileName })),
+        specification,
+        user_id,
     });
-
-    const productId = result[0].insertId;
-
     const product = await mysqlGetOrThrow<DatabaseProduct>(
         pool.execute(`SELECT * FROM product WHERE id = ?`, [productId]),
     );

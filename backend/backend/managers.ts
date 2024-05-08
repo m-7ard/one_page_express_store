@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { DatabaseUser } from "./database_types.js";
-import { userSchema } from "./schemas.js";
+import { productSchema, userSchema } from "./schemas.js";
 import { dbOperation, mysqlGetQuery, mysqlPrepareWithPlaceholders } from "./utils.js";
 import { ResultSetHeader } from "mysql2";
 import { Argon2id } from "oslo/password";
 import { generateId } from "lucia";
+import { nanoid } from "nanoid";
+import { BASE_DIR } from "./settings.js";
+import { rm, writeFile } from "fs/promises";
 
 interface UserUpdate extends Partial<z.output<typeof userSchema>> {
     id: NonNullable<z.output<typeof userSchema.shape.id>>;
@@ -66,5 +69,69 @@ export const User = {
         await dbOperation(async (connection) => {
             await connection.execute(`DELETE FROM user WHERE id = ?`, [id]);
         });
+    },
+};
+
+interface ProductCreate extends z.output<typeof productSchema> {}
+
+interface ProductUpdate extends Partial<z.output<typeof productSchema>> {
+    id: NonNullable<z.output<typeof productSchema.shape.id>>;
+}
+
+interface ProductDelete extends Partial<z.output<typeof productSchema>> {
+    id: NonNullable<z.output<typeof productSchema.shape.id>>;
+}
+
+export const Product = {
+    create: async (data: ProductCreate) => {
+        let savedFileNames: {
+            index: number;
+            fileName: string;
+        }[] = [];
+
+        await Promise.all(
+            data.newImages.map(async ({ index, file }) => {
+                const id = nanoid();
+                const fileName = `${id}-${file.originalname}`;
+                try {
+                    await writeFile(`${BASE_DIR}/backend/media/${fileName}`, file.buffer);
+                    savedFileNames.push({ index, fileName });
+                } catch (error) {
+                    console.log(`Error trying to save ${fileName}`);
+                }
+            }),
+        );
+
+        const fileNames = savedFileNames.sort((a, b) => a.index - b.index).map(({ fileName }) => fileName);
+
+        const { insertId } = await dbOperation(async (connection) => {
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: `
+                    INSERT INTO product 
+                        SET
+                            name = :name,
+                            description = :description,
+                            price = :price,
+                            kind = :kind,
+                            specification = :specification,
+                            images = :images,
+                            user_id = :user_id
+                `,
+                values: {
+                    name: data.name,
+                    description: data.description,
+                    price: data.price,
+                    kind: data.kind,
+                    specification: JSON.stringify(data.specification),
+                    images: JSON.stringify(fileNames),
+                    user_id: data.user_id
+                },
+                namedPlaceholders: true,
+            });
+
+            return result;
+        });
+
+        return insertId;
     },
 };

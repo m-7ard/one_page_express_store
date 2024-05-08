@@ -7,14 +7,22 @@ import { PRODUCT } from "./constants.js";
 import { DatabaseUser } from "./database_types.js";
 
 export const productSchema = z.object({
-    id: z.coerce.number().refine(async (value) => {
-        return await dbOperation(async (connection) => {
-            const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM product WHERE id = ?`, [value]);
-            return result.length === 1;
-        });
-    }).optional(),
+    id: z.coerce
+        .number()
+        .refine(
+            async (value) => {
+                return await dbOperation(async (connection) => {
+                    const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM product WHERE id = ?`, [
+                        value,
+                    ]);
+                    return result.length === 1;
+                });
+            },
+            { message: "Product doesn't exist." },
+        )
+        .optional(),
     name: z.string().min(1).max(50),
-    description: z.string().max(512),
+    description: z.string().max(512).default(""),
     price: z.coerce.number().min(0.1),
     kind: z.string().min(1).max(50),
     newImages: z
@@ -33,24 +41,27 @@ export const productSchema = z.object({
                 }),
             }),
         )
-        .max(PRODUCT.MAX_IMAGES_LENGTH, { message: `Cannot upload more than ${PRODUCT.MAX_IMAGES_LENGTH} files.` }),
-    existingImages: z.array(
-        z.object({
-            index: z.number(),
-            fileName: z.string().refine(
-                async (value) => {
-                    try {
-                        await access(`${BASE_DIR}/backend/media/${value}`);
-                        return true;
-                    } catch {
-                        return false;
-                    }
-                },
-                { message: "File does not exist." },
-            ),
-        }),
-    ),
-    specification: z.string().transform((value, ctx) => {
+        .max(PRODUCT.MAX_IMAGES_LENGTH, { message: `Cannot upload more than ${PRODUCT.MAX_IMAGES_LENGTH} files.` })
+        .default([]),
+    existingImages: z
+        .array(
+            z.object({
+                index: z.number(),
+                fileName: z.string().refine(
+                    async (value) => {
+                        try {
+                            await access(`${BASE_DIR}/backend/media/${value}`);
+                            return true;
+                        } catch {
+                            return false;
+                        }
+                    },
+                    { message: "File does not exist." },
+                ),
+            }),
+        )
+        .default([]),
+    specification: z.string().transform<Array<[string, string]>>((value, ctx) => {
         try {
             const specification = JSON.parse(value);
             const validator = z.array(z.tuple([z.string(), z.string()])).refine(
@@ -88,18 +99,17 @@ export const productSchema = z.object({
             return z.NEVER;
         }
     }),
+    user_id: z.string().refine(async (value) => {
+        return await dbOperation(async (connection) => {
+            const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM user WHERE id = ?`, [value]);
+            return result.length === 1;
+        });
+    }),
 });
 
 export const userSchema = z.object({
     id: z.string().optional(),
-    username: z
-        .string()
-        .min(4)
-        .max(25),
+    username: z.string().min(4).max(25),
     password: z.string().min(8).max(255),
-    is_admin: z
-        .number()
-        .min(0)
-        .max(1)
-        .default(0),
+    is_admin: z.number().min(0).max(1).default(0),
 });

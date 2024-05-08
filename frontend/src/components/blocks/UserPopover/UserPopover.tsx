@@ -95,7 +95,7 @@ UserPopover.Panel = function Panel({
 
     return (
         <Popover.Panel
-            className="bg-gray-50 text-gray-900 p-4 mt-2 border border-gray-900 w-full max-w-72 shadow"
+            className="bg-gray-50 text-gray-900 p-4 mt-1 border border-gray-900 w-full max-w-72 shadow"
             ref={setPopperElement}
             style={styles.popper}
             {...attributes.popper}

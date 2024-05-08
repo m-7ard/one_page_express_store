@@ -11,7 +11,15 @@ export async function dbOperation<T>(callback: (connection: mysql.PoolConnection
         const pool = getFromContext("pool");
         connection = await pool.getConnection();
         if (connection != null) {
-            return await callback(connection);
+            await connection.beginTransaction();
+            try {
+                const result = await callback(connection);
+                await connection.commit();
+                return result;
+            } catch (error) {
+                await connection.rollback();
+                throw error;
+            }
         }
 
         throw new Error("Failed to establish connection");
@@ -77,13 +85,29 @@ export async function fileExists(path: string) {
 }
 
 export function blueText(text: string) {
-    return `\x1b[34m${text}\x1b[0m`
+    return `\x1b[34m${text}\x1b[0m`;
 }
 
 export function redText(text: string) {
-    return `\x1b[31m${text}\x1b[0m`
+    return `\x1b[31m${text}\x1b[0m`;
 }
 
 export function greenText(text: string) {
-    return `\x1b[33m${text}\x1b[0m`
+    return `\x1b[33m${text}\x1b[0m`;
+}
+
+export function mysqlPrepareWithPlaceholders({
+    connection,
+    sql,
+    values,
+}: {
+    connection: mysql.Connection;
+    sql: string;
+    values: Record<string, string | number | null>;
+}) {
+    return connection.execute({
+        sql,
+        values,
+        namedPlaceholders: true,
+    });
 }

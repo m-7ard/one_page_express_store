@@ -9,6 +9,7 @@ export type AbstractPopoverTrigger = React.FunctionComponent<{
 }>;
 
 export type AbstractPopoverPanel = React.FunctionComponent<{
+    referenceElement: HTMLElement | null;
     setPopperElement: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
     popper: ReturnType<typeof usePopper>;
     open?: boolean;
@@ -34,7 +35,7 @@ export default function AbstractPopover({
             {({ open }) => (
                 <>
                     <Trigger setReferenceElement={setReferenceElement} open={open} />
-                    <Panel setPopperElement={setPopperElement} popper={popper} open={open} />
+                    <Panel referenceElement={referenceElement} setPopperElement={setPopperElement} popper={popper} open={open} />
                 </>
             )}
         </Popover>

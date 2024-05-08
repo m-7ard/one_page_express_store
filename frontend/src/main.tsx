@@ -16,9 +16,7 @@ const queryClient = new QueryClient({
 
 const rootRoute = createRootRoute({
     component: () => (
-        <QueryClientProvider client={queryClient}>
-            <App />
-        </QueryClientProvider>
+        <App />
     ),
 });
 
@@ -47,5 +45,7 @@ const router = createRouter({
 })
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-    <RouterProvider router={router} />
+    <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+    </QueryClientProvider>
 );

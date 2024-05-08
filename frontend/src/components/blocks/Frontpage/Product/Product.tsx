@@ -24,9 +24,7 @@ export default function Product({ name, price, images, description, kind, specif
                     <div className="text-base text-gray-900 font-medium">{name}</div>
                     <div className="text-sm text-gray-900">{price}$</div>
                 </div>
-                <div className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}>
-                    Add to Cart
-                </div>
+                <Product.AddToCartButton />
                 <div>
                     <InformationDisplayDialog
                         Trigger={({ onClick }) => (
@@ -73,4 +71,12 @@ export default function Product({ name, price, images, description, kind, specif
             </div>
         </ProductContext.Provider>
     );
+}
+
+Product.AddToCartButton = function AddToCard () {
+    return (
+        <div className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400 border-gray-900`}>
+            Add to Cart
+        </div>
+    )
 }

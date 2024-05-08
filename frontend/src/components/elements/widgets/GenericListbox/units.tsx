@@ -1,6 +1,6 @@
 import { Listbox } from "@headlessui/react";
-import React, { useEffect, useState } from "react";
-import { asWidget, createUseContext } from "../../../../utils";
+import React, { useState } from "react";
+import { createUseContext } from "../../../../utils";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
 import { usePopper } from "react-popper-2";
 import App from "../../../blocks/App/App";

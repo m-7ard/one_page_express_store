@@ -6,7 +6,8 @@
     "scripts": {
         "dev": "tsx watch --env-file=.env ./backend/index.ts",
         "test_products": "npx tsx --env-file=.env tests/products.ts",
-        "test_users": "npx tsx --env-file=.env tests/users.ts"
+        "test_users": "npx tsx --env-file=.env tests/users.ts",
+        "test_cart": "npx tsx --env-file=.env tests/cart.ts"
     },
     "devDependencies": {
         "@types/cors": "^2.8.17",

@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { access } from "fs/promises";
 import { BASE_DIR } from "./settings.js";
-import { dbOperation } from "./utils.js";
+import { dbOperation, mysqlGetOrThrow, mysqlGetQuery } from "./utils.js";
 import { RowDataPacket } from "mysql2";
 import { PRODUCT } from "./constants.js";
+import { DatabaseUser } from "./database_types.js";
 
 export const productSchema = z.object({
     id: z.coerce.number().refine(async (value) => {
@@ -87,4 +88,18 @@ export const productSchema = z.object({
             return z.NEVER;
         }
     }),
+});
+
+export const userSchema = z.object({
+    id: z.string().optional(),
+    username: z
+        .string()
+        .min(4)
+        .max(25),
+    password: z.string().min(8).max(255),
+    is_admin: z
+        .number()
+        .min(0)
+        .max(1)
+        .default(0),
 });

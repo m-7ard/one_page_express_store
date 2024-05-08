@@ -7,6 +7,7 @@ import { Argon2id } from "oslo/password";
 import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
 import { exec } from "child_process";
 import { AssertionError } from "assert";
+import { User } from "../backend/managers.js";
 
 function dbData(): Promise<string> {
     /* 
@@ -144,26 +145,14 @@ export async function createUser({
 }) {
     const pool = getFromContext("pool");
     const userData = {
-        id: generateId(15),
         username: username,
-        hashed_password: await new Argon2id().hash(password),
+        password: password,
         is_admin: is_admin ? 1 : 0,
     };
 
-    await pool.execute({
-        sql: `INSERT INTO user (id, username, hashed_password, is_admin) VALUES (:id, :username, :hashed_password, :is_admin)`,
-        values: userData,
-        namedPlaceholders: true,
-    });
-
-    const user = await mysqlGetOrThrow<DatabaseUser>(
-        pool.execute({
-            sql: `SELECT * FROM user WHERE id = :id`,
-            values: userData,
-            namedPlaceholders: true,
-        }),
-    );
-
+    const id = await User.create(userData);
+    const user = await mysqlGetOrThrow<DatabaseUser>(pool.execute(`SELECT * FROM user WHERE id = ?`, [id]));
+    // We require the non-hashed passowrd to log in through the API.
     return { ...user, password };
 }
 

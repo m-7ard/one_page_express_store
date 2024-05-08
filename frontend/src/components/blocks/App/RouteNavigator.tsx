@@ -21,25 +21,31 @@ export default function RouteNavigator({ Trigger }: { Trigger: AbstractPopoverTr
                     style={styles.popper}
                     {...attributes.popper}
                 >
-                    {CHOICES.map(({ label, value }) => (
-                        <Popover.Button
-                            key={value}
-                            as={Link}
-                            to={value}
-                            className={[
-                                "group ui-active:outline-none ui-open:outline-none",
-                                "justify-between text-gray-900",
-                                App.BaseButtonClassNames.replace("border", ""),
-                                ...[
-                                    router.location.pathname === value
-                                        ? "bg-gray-200"
-                                        : "bg-gray-100 hover:bg-gray-200",
-                                ],
-                            ].join(" ")}
-                        >
-                            <div className="whitespace-nowrap">{label}</div>
-                        </Popover.Button>
-                    ))}
+                    {({ close }) => (
+                        <>
+                            {CHOICES.map(({ label, value }) => (
+                                <Link
+                                    key={value}
+                                    to={value}
+                                    className={[
+                                        "group ui-active:outline-none ui-open:outline-none",
+                                        "justify-between text-gray-900",
+                                        App.BaseButtonClassNames.replace("border", ""),
+                                        ...[
+                                            router.location.pathname === value
+                                                ? "bg-gray-200"
+                                                : "bg-gray-100 hover:bg-gray-200",
+                                        ],
+                                    ].join(" ")}
+                                    onClick={() => {
+                                        close()
+                                    }}
+                                >
+                                    <div className="whitespace-nowrap">{label}</div>
+                                </Link>
+                            ))}
+                        </>
+                    )}
                 </Popover.Panel>
             )}
             options={{

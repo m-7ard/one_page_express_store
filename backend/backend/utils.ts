@@ -111,3 +111,15 @@ export function mysqlPrepareWithPlaceholders({
         namedPlaceholders: true,
     });
 }
+
+export async function mysqlQueryTableByID<T extends RowDataPacket>({ table, id, fields = '*' }: {
+    table: string;
+    id: string | number;
+    fields?: string | number
+}): Promise<T[]> {
+    return await dbOperation(async (connection) => {
+        return await mysqlGetQuery<T>(
+            connection.execute(`SELECT ${fields} FROM ${table} WHERE id = ?`, [id])
+        )
+    })
+}

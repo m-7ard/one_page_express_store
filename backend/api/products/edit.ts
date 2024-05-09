@@ -7,11 +7,13 @@ import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
-import { dbOperation, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperation, mysqlQueryTableByID, routeWithErrorHandling } from "../../backend/utils.js";
 import { rm } from "fs/promises";
+import { Product } from "../../backend/managers.js";
 
 export default routeWithErrorHandling(async (request: Request, response: Response) => {
-    if (response.locals.user == null || response.locals.user.is_admin === false) {
+    const user = response.locals.user;
+    if (user == null || user.is_admin === false) {
         response.status(403).send();
         return;
     }
@@ -36,61 +38,19 @@ export default routeWithErrorHandling(async (request: Request, response: Respons
                 ...request.body,
                 newImages,
                 existingImages,
+                user_id: user.id,
             });
-        if (validation.success) {
-            const cleanedData = validation.data;
-            
-            const newExistingImages = cleanedData.existingImages.map(({ fileName }) => fileName);
-            const [oldProductQuery] = await connection.execute<DatabaseProduct[]>(
-                "SELECT * FROM product WHERE id = ?",
-                [cleanedData.id],
-            );
-            const oldProduct = productSerializer.parse(oldProductQuery[0]);
-            const filesForDeletion = oldProduct.images.filter((image) => !newExistingImages.includes(image));
-            await Promise.all(
-                filesForDeletion.map(async (image) => {
-                    await rm(`media/${image}`);
-                }),
-            );
-
-            const savedFileNames = await Promise.all(
-                cleanedData.newImages.map(async ({ index, file }) => {
-                    const id = nanoid();
-                    const fileName = `${id}-${file.originalname}`;
-                    await writeFile(`${BASE_DIR}/backend/media/${fileName}`, file.buffer);
-                    return { index, fileName };
-                }),
-            );
-
-            const fileNames = [...savedFileNames, ...existingImages]
-                .sort((a, b) => a.index - b.index)
-                .map(({ fileName }) => fileName);
-            const [result, fields] = await connection.execute<ResultSetHeader>(
-                `UPDATE product
-                    SET name = ?,
-                        description = ?,
-                        price = ?,
-                        kind = ?,
-                        specification = ?,
-                        images = ?
-                    WHERE id = ${cleanedData.id}`,
-                [
-                    cleanedData.name,
-                    cleanedData.description,
-                    cleanedData.price,
-                    cleanedData.kind,
-                    JSON.stringify(cleanedData.specification),
-                    JSON.stringify(fileNames),
-                ],
-            );
-            const [productQuery] = await connection.execute<DatabaseProduct[]>("SELECT * FROM product WHERE id = ?", [
-                cleanedData.id,
-            ]);
-            const [product] = productQuery;
-            return response.status(200).json(productSerializer.parse(product));
-        } else {
-            return response.status(400).json(validation.error.flatten());
+        if (!validation.success) {
+            response.status(400).json(validation.error.flatten());
+            return;
         }
+
+        await Product.update(validation.data);
+        const [product] = await mysqlQueryTableByID({
+            table: "product",
+            id: validation.data.id,
+        });
+        return response.status(200).json(productSerializer.parse(product));
     });
     return;
-})
+});

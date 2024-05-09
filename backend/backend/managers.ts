@@ -1,13 +1,20 @@
 import { z } from "zod";
 import { DatabaseUser } from "./database_types.js";
-import { productSchema, userSchema } from "./schemas.js";
-import { dbOperation, mysqlGetQuery, mysqlPrepareWithPlaceholders } from "./utils.js";
+import { cartProductSchema, productSchema, userSchema } from "./schemas.js";
+import {
+    dbOperation,
+    mysqlGetOrThrow,
+    mysqlGetQuery,
+    mysqlPrepareWithPlaceholders,
+    mysqlQueryTableByID,
+} from "./utils.js";
 import { ResultSetHeader } from "mysql2";
 import { Argon2id } from "oslo/password";
 import { generateId } from "lucia";
 import { nanoid } from "nanoid";
 import { BASE_DIR } from "./settings.js";
 import { rm, writeFile } from "fs/promises";
+import { productSerializer } from "./serializers.js";
 
 interface UserUpdate extends Partial<z.output<typeof userSchema>> {
     id: NonNullable<z.output<typeof userSchema.shape.id>>;
@@ -124,7 +131,7 @@ export const Product = {
                     kind: data.kind,
                     specification: JSON.stringify(data.specification),
                     images: JSON.stringify(fileNames),
-                    user_id: data.user_id
+                    user_id: data.user_id,
                 },
                 namedPlaceholders: true,
             });
@@ -132,6 +139,99 @@ export const Product = {
             return result;
         });
 
+        return insertId;
+    },
+    update: async (data: ProductUpdate) => {
+        let fileNames: string[];
+        await dbOperation(async (connection) => {
+            if (data.existingImages != null) {
+                const oldProduct = productSerializer.parse(
+                    await mysqlGetOrThrow<DatabaseUser>(
+                        connection.execute(`SELECT * FROM product WHERE id = ?`, [data.id]),
+                    ),
+                );
+                const newExistingImages =
+                    data.existingImages == null
+                        ? oldProduct.images
+                        : data.existingImages.map(({ fileName }) => fileName);
+                const filesForDeletion = oldProduct.images.filter((fileName) => !newExistingImages.includes(fileName));
+
+                await Promise.all(
+                    filesForDeletion.map(async (image) => {
+                        try {
+                            await rm(`media/${image}`);
+                        } catch (error) {
+                            console.log(`Error trying to delete ${image}.`);
+                        }
+                    }),
+                );
+
+                const savedFileNames =
+                    data.newImages == null
+                        ? []
+                        : await Promise.all(
+                              data.newImages.map(async ({ index, file }) => {
+                                  const id = nanoid();
+                                  const fileName = `${id}-${file.originalname}`;
+                                  await writeFile(`${BASE_DIR}/backend/media/${fileName}`, file.buffer);
+                                  return { index, fileName };
+                              }),
+                          );
+
+                fileNames = [...savedFileNames, ...data.existingImages]
+                    .sort((a, b) => a.index - b.index)
+                    .map(({ fileName }) => fileName);
+            }
+
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: `
+                    UPDATE product 
+                        SET
+                            name = IF (:name IS NULL, name, :name),
+                            description = IF (:description IS NULL, description, :description),
+                            price = IF (:price IS NULL, price, :price),
+                            kind = IF (:kind IS NULL, kind, :kind),
+                            specification = IF (:specification IS NULL, specification, :specification),
+                            images = IF (:images IS NULL, images, :images),
+                            user_id = IF (:user_id IS NULL, user_id, :user_id)
+                    WHERE
+                        id = :id
+                `,
+                values: {
+                    id: data.id,
+                    name: data.name ?? null,
+                    description: data.description ?? null,
+                    price: data.price ?? null,
+                    kind: data.kind ?? null,
+                    specification: data.specification == null ? null : JSON.stringify(data.specification),
+                    images: fileNames == null ? null : JSON.stringify(fileNames),
+                    user_id: data.user_id ?? null,
+                },
+                namedPlaceholders: true,
+            });
+
+            return result;
+        });
+    },
+};
+
+interface CartProductCreate extends z.output<typeof cartProductSchema> {}
+
+export const CartProduct = {
+    create: async (data: CartProductCreate) => {
+        const { insertId } = await dbOperation(async (connection) => {
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: "INSERT INTO cart_product (product_id, cart_id, amount) VALUES (:product_id, :cart_id, :amount)",
+                values: {
+                    cart_id: data.cart_id,
+                    product_id: data.product_id,
+                    amount: data.amount,
+                },
+                namedPlaceholders: true,
+            });
+
+            return result;
+        });
         return insertId;
     },
 };

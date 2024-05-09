@@ -26,8 +26,8 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
             },
             body: objectToFormData({
-                username: users.customerOneUser.username,
-                password: users.customerOneUser.password,
+                username: users.CUSTOMER_1.username,
+                password: users.CUSTOMER_1.password,
             }),
         });
 
@@ -44,22 +44,22 @@ testCase(async () => {
     }, "Login With Valid Data And Create Session");
 
     await test(async () => {
-        const customerOneUserCookie = await createSessionCookie(users.customerOneUser.id);
+        const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
         const response = await fetch("http://localhost:3001/api/users/login", {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: customerOneUserCookie,
+                Cookie: CUSTOMER_1_COOKIE,
             },
         });
 
         assert.strictEqual(response.status, 200);
         // Check that a new session was not created
         const sessionQuery = await mysqlGetQuery<DatabaseSession & RowDataPacket>(
-            pool.execute("SELECT * FROM user_session WHERE user_id = ?", [users.customerOneUser.id]),
+            pool.execute("SELECT * FROM user_session WHERE user_id = ?", [users.CUSTOMER_1.id]),
         );
         assert.strictEqual(sessionQuery.length, 1);
-        const sessionId = lucia.readSessionCookie(customerOneUserCookie)!;
+        const sessionId = lucia.readSessionCookie(CUSTOMER_1_COOKIE)!;
         const { session, user } = await lucia.validateSession(sessionId);
         assert.deepEqual(user, await response.json());
     }, "Skip Login When Already Logged In");
@@ -95,12 +95,12 @@ testCase(async () => {
     }, "Register With Valid Data And Create Session");
 
     await test(async () => {
-        const customerOneUserCookie = await createSessionCookie(users.customerOneUser.id);
+        const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
         const response = await fetch("http://localhost:3001/api/users/register", {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: customerOneUserCookie,
+                Cookie: CUSTOMER_1_COOKIE,
             },
             body: objectToFormData({
                 username: "new_user",
@@ -115,18 +115,18 @@ testCase(async () => {
     }, "Fail To Register When Already Logged In");
 
     await test(async () => {
-        const customerOneUserCookie = await createSessionCookie(users.customerOneUser.id);
+        const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
         const response = await fetch("http://localhost:3001/api/users/logout", {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: customerOneUserCookie,
+                Cookie: CUSTOMER_1_COOKIE,
             },
         });
 
         assert.strictEqual(response.status, 200);
 
-        const sessionId = lucia.readSessionCookie(customerOneUserCookie)!;
+        const sessionId = lucia.readSessionCookie(CUSTOMER_1_COOKIE)!;
         const { session, user } = await lucia.validateSession(sessionId);
 
         assert.equal(session, null);
@@ -145,19 +145,19 @@ testCase(async () => {
     }, "Fail To Logout When Not Logged In");
 
     await test(async () => {
-        const customerOneUserCookie = await createSessionCookie(users.customerOneUser.id);
+        const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
         const response = await fetch("http://localhost:3001/api/users/user", {
             method: "GET",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: customerOneUserCookie,
+                Cookie: CUSTOMER_1_COOKIE,
             },
         });
 
         assert.strictEqual(response.status, 200);
 
         const customerOne = await mysqlGetOrNull<DatabaseUser>(
-            pool.execute("SELECT * FROM user WHERE id = ?", [users.customerOneUser.id]),
+            pool.execute("SELECT * FROM user WHERE id = ?", [users.CUSTOMER_1.id]),
         );
         const data = await response.json();
         assert.deepEqual(userSerializer.parse(customerOne), data);

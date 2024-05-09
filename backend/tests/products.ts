@@ -19,7 +19,7 @@ const EXPECTED_PRICE_OVER_500_PRODUCT_COUNT = 2;
 const EXPECTED_PRICE_UNDER_500_PRODUCT_COUNT = 1;
 const EXPECTED_SPEC_BUILDING_IS_TALL = 2;
 const DEFAULT_ORDER_BY = "id DESC";
-const REQUIRED_PRODUCT_FIELDS = ["name", "description", "price", "kind", "specification"];
+const REQUIRED_PRODUCT_FIELDS = ["name", "price", "kind", "specification"];
 
 context.testsToRun = '__all__';
 
@@ -28,8 +28,8 @@ testCase(async () => {
     const users = await usersMixin();
     const products = await productsMixin({ users });
 
-    const customerOneUserCookie = await createSessionCookie(users.customerOneUser.id);
-    const adminOneUserCookie = await createSessionCookie(users.adminOneUser.id);
+    const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
+    const ADMIN_1_COOKIE = await createSessionCookie(users.ADMIN_1.id);
 
     //////////////
     /// LIST
@@ -113,17 +113,19 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: objectToFormData(VALID_CREATE_PRODUCT_DATA),
         });
 
         const data: DatabaseProduct = await response.json();
+
+        console.log(data)
+
+        assert.strictEqual(response.status, 201);
         const product = await mysqlGetOrThrow<DatabaseProduct>(
             pool.execute(`SELECT * FROM product WHERE id = ?`, [data.id]),
         );
-
-        assert.strictEqual(response.status, 201);
         assert.deepStrictEqual(data, productSerializer.parse(product));
         assert.strictEqual(data.user_id, product.user_id);
         await pool.execute(`DELETE FROM product where id = ?`, [data.id]);
@@ -134,7 +136,7 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: customerOneUserCookie,
+                Cookie: CUSTOMER_1_COOKIE,
             },
             body: objectToFormData(VALID_CREATE_PRODUCT_DATA),
         });
@@ -165,7 +167,7 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: objectToFormData({}),
         });
@@ -194,18 +196,18 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Create Product With Image Over Size Limit");
@@ -223,18 +225,18 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Create Product With Invalid Image File Format");
@@ -255,18 +257,18 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Create Product With Too Many Images");
@@ -291,18 +293,18 @@ testCase(async () => {
     };
 
     await test(async () => {
-        const response = await fetch(`http://localhost:3001/api/products/edit/${products.adminOneUserProduct_ONE.id}`, {
+        const response = await fetch(`http://localhost:3001/api/products/edit/${products.ADMIN_1__PRODUCT_1.id}`, {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: objectToFormData(VALID_NEW_PRODUCT_DATA),
         });
 
         const data: DatabaseProduct = await response.json();
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 200);
@@ -310,28 +312,28 @@ testCase(async () => {
     }, "Edit Product As Admin (Without Images)");
 
     await test(async () => {
-        const response = await fetch(`http://localhost:3001/api/products/edit/${products.adminOneUserProduct_ONE.id}`, {
+        const response = await fetch(`http://localhost:3001/api/products/edit/${products.ADMIN_1__PRODUCT_1.id}`, {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: customerOneUserCookie,
+                Cookie: CUSTOMER_1_COOKIE,
             },
             body: objectToFormData(VALID_NEW_PRODUCT_DATA),
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 403);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Edit Product As Customer");
 
     await test(async () => {
-        const response = await fetch(`http://localhost:3001/api/products/edit/${products.adminOneUserProduct_ONE.id}`, {
+        const response = await fetch(`http://localhost:3001/api/products/edit/${products.ADMIN_1__PRODUCT_1.id}`, {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
@@ -340,12 +342,12 @@ testCase(async () => {
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 403);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Edit Product As Vistor");
@@ -359,22 +361,22 @@ testCase(async () => {
             new Blob([largeSizeFile], { type: mime.lookup(largeSizeFilePath) || undefined }),
             "big-image.png",
         );
-        const response = await fetch(`http://localhost:3001/api/products/edit/${products.adminOneUserProduct_ONE.id}`, {
+        const response = await fetch(`http://localhost:3001/api/products/edit/${products.ADMIN_1__PRODUCT_1.id}`, {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Edit Product With Image Over Size Limit");
@@ -388,22 +390,22 @@ testCase(async () => {
             new Blob([invalidFormatFile], { type: mime.lookup(invalidFormatFilePath) || undefined }),
             "text_file.txt",
         );
-        const response = await fetch(`http://localhost:3001/api/products/edit/${products.adminOneUserProduct_ONE.id}`, {
+        const response = await fetch(`http://localhost:3001/api/products/edit/${products.ADMIN_1__PRODUCT_1.id}`, {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Edit Product With Invalid Image File Format");
@@ -420,22 +422,22 @@ testCase(async () => {
             );
         }
 
-        const response = await fetch(`http://localhost:3001/api/products/edit/${products.adminOneUserProduct_ONE.id}`, {
+        const response = await fetch(`http://localhost:3001/api/products/edit/${products.ADMIN_1__PRODUCT_1.id}`, {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
 
         assert.strictEqual(response.status, 400);
         assert.deepStrictEqual(
-            productSerializer.parse(products.adminOneUserProduct_ONE),
+            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
             productSerializer.parse(product),
         );
     }, "Fail To Edit Product With Too Many Images");
@@ -453,7 +455,7 @@ testCase(async () => {
             method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
@@ -477,7 +479,7 @@ testCase(async () => {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
@@ -495,7 +497,7 @@ testCase(async () => {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
@@ -515,7 +517,7 @@ testCase(async () => {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: adminOneUserCookie,
+                Cookie: ADMIN_1_COOKIE,
             },
             body: sendData,
         });
@@ -530,17 +532,17 @@ testCase(async () => {
 
     await test(async () => {
         const response = await fetch(
-            `http://localhost:3001/api/products/delete/${products.adminOneUserProduct_ONE.id}`,
+            `http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`,
             {
                 method: "POST",
                 headers: {
                     Origin: env.ORIGIN as string,
-                    Cookie: adminOneUserCookie,
+                    Cookie: ADMIN_1_COOKIE,
                 },
             },
         );
         const product = await mysqlGetOrNull<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
         const productsQuery = await mysqlGetQuery<DatabaseProduct>(pool.execute(`SELECT * FROM product`));
 
@@ -551,28 +553,28 @@ testCase(async () => {
 
     await test(async () => {
         const response = await fetch(
-            `http://localhost:3001/api/products/delete/${products.adminOneUserProduct_ONE.id}`,
+            `http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`,
             {
                 method: "POST",
                 headers: {
                     Origin: env.ORIGIN as string,
-                    Cookie: customerOneUserCookie,
+                    Cookie: CUSTOMER_1_COOKIE,
                 },
             },
         );
         const product = await mysqlGetOrNull<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
         const productsQuery = await mysqlGetQuery<DatabaseProduct>(pool.execute(`SELECT * FROM product`));
 
         assert.strictEqual(response.status, 403);
-        assert.deepEqual(productSerializer.parse(product), productSerializer.parse(products.adminOneUserProduct_ONE));
+        assert.deepEqual(productSerializer.parse(product), productSerializer.parse(products.ADMIN_1__PRODUCT_1));
         assert.strictEqual(productsQuery.length, EXPECTED_TOTAL_PRODUCT_COUNT);
     }, "Fail To Delete Product As Customer");
 
     await test(async () => {
         const response = await fetch(
-            `http://localhost:3001/api/products/delete/${products.adminOneUserProduct_ONE.id}`,
+            `http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`,
             {
                 method: "POST",
                 headers: {
@@ -581,12 +583,12 @@ testCase(async () => {
             },
         );
         const product = await mysqlGetOrNull<DatabaseProduct>(
-            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.adminOneUserProduct_ONE.id]),
+            pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
         const productsQuery = await mysqlGetQuery<DatabaseProduct>(pool.execute(`SELECT * FROM product`));
 
         assert.strictEqual(response.status, 403);
-        assert.deepEqual(productSerializer.parse(product), productSerializer.parse(products.adminOneUserProduct_ONE));
+        assert.deepEqual(productSerializer.parse(product), productSerializer.parse(products.ADMIN_1__PRODUCT_1));
         assert.strictEqual(productsQuery.length, EXPECTED_TOTAL_PRODUCT_COUNT);
     }, "Fail To Delete Product As Visitor");
 });

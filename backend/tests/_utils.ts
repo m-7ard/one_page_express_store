@@ -1,13 +1,13 @@
-import { blueText, greenText, mysqlGetOrThrow, redText } from "../backend/utils.js";
+import { blueText, greenText, mysqlGetOrThrow, mysqlQueryTableByID, redText } from "../backend/utils.js";
 import mysql, { ResultSetHeader } from "mysql2/promise";
 import { env } from "process";
 import context, { getFromContext } from "../backend/context.js";
 import { generateId } from "lucia";
 import { Argon2id } from "oslo/password";
-import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
+import { DatabaseCart, DatabaseCartProduct, DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
 import { exec } from "child_process";
 import { AssertionError } from "assert";
-import { Product, User } from "../backend/managers.js";
+import { CartProduct, Product, User } from "../backend/managers.js";
 import { productSchema } from "../backend/schemas.js";
 
 function dbData(): Promise<string> {
@@ -174,8 +174,7 @@ export async function createProduct({
     kind: string;
     description?: string;
 }) {
-    const pool = getFromContext("pool");
-    const productId = await Product.create({
+    const id = await Product.create({
         name,
         description,
         price,
@@ -185,11 +184,24 @@ export async function createProduct({
         specification,
         user_id,
     });
-    const product = await mysqlGetOrThrow<DatabaseProduct>(
-        pool.execute(`SELECT * FROM product WHERE id = ?`, [productId]),
-    );
-
+    const [product] = await mysqlQueryTableByID<DatabaseProduct>({ table: "product", id });
     return product;
+}
+
+export async function createCartProduct({
+    user_id,
+    amount,
+    product_id,
+}: {
+    user_id: string;
+    amount: number;
+    product_id: number;
+}) {
+    const pool = getFromContext("pool");
+    const cart = await mysqlGetOrThrow<DatabaseCart>(pool.execute("SELECT * FORM cart WHERE user_id = ?", [user_id]));
+    const id = await CartProduct.create({ cart_id: cart.id, amount, product_id });
+    const [cartProduct] = await mysqlQueryTableByID<DatabaseCartProduct>({ table: "cart_product", id });
+    return cartProduct;
 }
 
 export async function createSessionCookie(userId: string) {

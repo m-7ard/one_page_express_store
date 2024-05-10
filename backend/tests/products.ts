@@ -120,8 +120,6 @@ testCase(async () => {
 
         const data: DatabaseProduct = await response.json();
 
-        console.log(data)
-
         assert.strictEqual(response.status, 201);
         const product = await mysqlGetOrThrow<DatabaseProduct>(
             pool.execute(`SELECT * FROM product WHERE id = ?`, [data.id]),

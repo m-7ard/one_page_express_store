@@ -1,5 +1,5 @@
 import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
-import { createProduct, createUser } from "./_utils.js";
+import { createCartProduct, createProduct, createUser } from "./_utils.js";
 
 interface UserData {
     ADMIN_1: DatabaseUser;
@@ -58,6 +58,34 @@ export async function productsMixin({ users }: { users: UserData }): Promise<Pro
         existingImages: [],
         user_id: users.ADMIN_2.id,
     });
-    
+
     return { ADMIN_1__PRODUCT_1, ADMIN_2__PRODUCT_1, ADMIN_2__PRODUCT_2 };
+}
+
+export async function cartProductMixin({ users, products }: { users: UserData; products: ProductData }) {
+    return {
+        ADMIN_1: {
+            ADMIN_2: {
+                PRODUCT_1: await createCartProduct({
+                    user_id: users.ADMIN_1.id,
+                    product_id: products.ADMIN_2__PRODUCT_1.id,
+                    amount: 1,
+                }),
+                PRODUCT_2: await createCartProduct({
+                    user_id: users.ADMIN_1.id,
+                    product_id: products.ADMIN_2__PRODUCT_1.id,
+                    amount: 1,
+                })
+            }
+        },
+        CUSTOMER_1: {
+            ADMIN_1: {
+                PRODUCT_1: await createCartProduct({
+                    user_id: users.CUSTOMER_1.id,
+                    product_id: products.ADMIN_1__PRODUCT_1.id,
+                    amount: 1,
+                })
+            }
+        }
+    };
 }

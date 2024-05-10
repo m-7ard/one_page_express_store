@@ -1,6 +1,6 @@
 import { number, z } from "zod";
-import { mysqlQueryTableByID } from "./utils.js";
-import { DatabaseProduct } from "./database_types.js";
+import { dbOperation, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
+import { DatabaseCartProduct, DatabaseProduct } from "./database_types.js";
 
 export const userSerializer = z.object({
     id: z.string(),
@@ -25,6 +25,7 @@ export const productSerializer = z.object({
 
 export const cartProductSerializer = z
     .object({
+        id: z.number().min(1),
         amount: z.number().min(1),
         product_id: z.number().min(1),
     })
@@ -41,5 +42,31 @@ export const cartProductSerializer = z
         return {
             ...rest,
             product: productSerializer.parse(product),
+        };
+    });
+
+export const cartSerializer = z
+    .object({
+        id: z.number().min(1),
+        user_id: z.string(),
+    })
+    .transform(async (values, ctx) => {
+        const cartProducts = await dbOperation(
+            async (connection) =>
+                await mysqlGetQuery<DatabaseCartProduct>(
+                    connection.execute("SELECT * FROM cart_product WHERE cart_id = ?", [values.id]),
+                ),
+        );
+        const validation = await z.array(cartProductSerializer).safeParseAsync(cartProducts);
+        if (!validation.success) {
+            validation.error.issues.forEach((issue) => {
+                ctx.addIssue(issue);
+            });
+            return z.NEVER;
+        }
+
+        return {
+            ...values,
+            products: validation.data,
         };
     });

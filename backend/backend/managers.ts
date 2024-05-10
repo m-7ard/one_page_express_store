@@ -143,7 +143,7 @@ export const Product = {
     },
     update: async (data: ProductUpdate) => {
         let fileNames: string[];
-        await dbOperation(async (connection) => {
+        return await dbOperation(async (connection) => {
             if (data.existingImages != null) {
                 const oldProduct = productSerializer.parse(
                     await mysqlGetOrThrow<DatabaseUser>(
@@ -216,6 +216,12 @@ export const Product = {
 };
 
 interface CartProductCreate extends z.output<typeof cartProductSchema> {}
+interface CartProductUpdate extends Partial<z.output<typeof cartProductSchema>> {
+    id: NonNullable<z.output<typeof cartProductSchema.shape.id>>;
+}
+interface CartProductDelete extends Partial<z.output<typeof cartProductSchema>> {
+    id: NonNullable<z.output<typeof cartProductSchema.shape.id>>;
+}
 
 export const CartProduct = {
     create: async (data: CartProductCreate) => {
@@ -233,5 +239,30 @@ export const CartProduct = {
             return result;
         });
         return insertId;
+    },
+    update: async (data: CartProductUpdate) => {
+        return await dbOperation(async (connection) => {
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: `
+                    UPDATE product 
+                        SET
+                            amount = IF (:amount IS NULL, amount, :amount),
+                    WHERE
+                        id = :id
+                `,
+                values: {
+                    id: data.id,
+                    amount: data.amount ?? null,
+                },
+                namedPlaceholders: true,
+            });
+
+            return result;
+        });
+    },
+    delete: async (data: CartProductDelete) => {
+        await dbOperation(async (connection) => {
+            await connection.execute(`DELETE FROM cart_product WHERE id = ?`, [data.id]);
+        });
     },
 };

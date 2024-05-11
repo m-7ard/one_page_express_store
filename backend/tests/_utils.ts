@@ -198,7 +198,7 @@ export async function createCartProduct({
     product_id: number;
 }) {
     const pool = getFromContext("pool");
-    const cart = await mysqlGetOrThrow<DatabaseCart>(pool.execute("SELECT * FORM cart WHERE user_id = ?", [user_id]));
+    const cart = await mysqlGetOrThrow<DatabaseCart>(pool.execute("SELECT * FROM cart WHERE user_id = ?", [user_id]));
     const id = await CartProduct.create({ cart_id: cart.id, amount, product_id });
     const [cartProduct] = await mysqlQueryTableByID<DatabaseCartProduct>({ table: "cart_product", id });
     return cartProduct;

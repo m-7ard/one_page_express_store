@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Request, Response } from "express";
 import { DatabaseUser, pool } from "../../lib/db.js";
-import { dbOperation, mysqlGetOrThrow } from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlGetOrThrow } from "../../backend/utils.js";
 import { Argon2id } from "oslo/password";
 import { generateId } from "lucia";
 import { lucia } from "../../lib/auth.js";
@@ -14,7 +14,7 @@ const schema = z.object({
     ...userSchema.shape,
     username: userSchema.shape.username.refine(
         async (value) =>
-            await dbOperation(async (connection) => {
+            await dbOperationWithRollback(async (connection) => {
                 const [userQuery, fields] = await connection.execute<DatabaseUser[]>(
                     "SELECT id FROM user WHERE username = ?",
                     [value],
@@ -42,7 +42,7 @@ export default async function register(request: Request, response: Response) {
         const sessionCookie = lucia.createSessionCookie(session.id);
         response.appendHeader("Set-Cookie", sessionCookie.serialize());
 
-        const user = await dbOperation(async (connection) => {
+        const user = await dbOperationWithRollback(async (connection) => {
             return await mysqlGetOrThrow<DatabaseUser>(connection.execute("SELECT * FROM user WHERE id = ?", [id]));
         });
 

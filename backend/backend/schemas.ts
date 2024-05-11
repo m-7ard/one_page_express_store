@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { access } from "fs/promises";
 import { BASE_DIR } from "./settings.js";
-import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
+import { dbOperationWithRollback, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
 import { RowDataPacket } from "mysql2";
 import { PRODUCT } from "./constants.js";
 import { DatabaseUser } from "./database_types.js";
@@ -12,7 +12,7 @@ export const productSchema = z.object({
         .min(1)
         .refine(
             async (value) => {
-                return await dbOperation(async (connection) => {
+                return await dbOperationWithRollback(async (connection) => {
                     const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM product WHERE id = ?`, [
                         value,
                     ]);
@@ -101,7 +101,7 @@ export const productSchema = z.object({
         }
     }),
     user_id: z.string().refine(async (value) => {
-        return await dbOperation(async (connection) => {
+        return await dbOperationWithRollback(async (connection) => {
             const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM user WHERE id = ?`, [value]);
             return result.length === 1;
         });
@@ -120,10 +120,8 @@ export const cartProductSchema = z.object({
         .number()
         .min(1)
         .refine(
-            async (value) => (await mysqlQueryTableByID({ table: "card_product", id: value, fields: 1 })).length === 1,
-            {
-                message: "Cart Product does not exist.",
-            },
+            async (value) => (await mysqlQueryTableByID({ table: "cart_product", id: value, fields: 1 })).length === 1,
+            { message: "Cart Product does not exist." },
         )
         .optional(),
     cart_id: z.coerce

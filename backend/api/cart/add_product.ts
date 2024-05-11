@@ -8,7 +8,7 @@ import { cartProductSerializer, productSerializer } from "../../backend/serializ
 import { cartProductSchema, productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
 import {
-    dbOperation,
+    dbOperationWithRollback,
     mysqlGetOrNull,
     mysqlGetOrThrow,
     mysqlQueryTableByID,
@@ -23,7 +23,7 @@ const add_product = routeWithErrorHandling(async (request: Request, response: Re
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    return await dbOperationWithRollback(async (connection) => {
         const cart = await mysqlGetOrThrow<DatabaseCart>(
             connection.execute("SELECT * FROM cart WHERE user_id = ?", [user.id]),
         );

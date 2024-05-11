@@ -1,5 +1,5 @@
 import { number, z } from "zod";
-import { dbOperation, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
+import { dbOperationWithRollback, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
 import { DatabaseCartProduct, DatabaseProduct } from "./database_types.js";
 
 export const userSerializer = z.object({
@@ -51,7 +51,7 @@ export const cartSerializer = z
         user_id: z.string(),
     })
     .transform(async (values, ctx) => {
-        const cartProducts = await dbOperation(
+        const cartProducts = await dbOperationWithRollback(
             async (connection) =>
                 await mysqlGetQuery<DatabaseCartProduct>(
                     connection.execute("SELECT * FROM cart_product WHERE cart_id = ?", [values.id]),

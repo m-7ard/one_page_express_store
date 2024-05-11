@@ -7,7 +7,7 @@ import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
-import { dbOperation, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { Product } from "../../backend/managers.js";
 
 const create = routeWithErrorHandling(async (request: Request, response: Response) => {
@@ -17,7 +17,7 @@ const create = routeWithErrorHandling(async (request: Request, response: Respons
         return;
     }
 
-    await dbOperation(async (connection) => {
+    await dbOperationWithRollback(async (connection) => {
         const { newImages, existingImages } = getImages(request);
         const validation = await productSchema.safeParseAsync({
             ...request.body,

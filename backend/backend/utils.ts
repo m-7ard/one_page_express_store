@@ -4,7 +4,13 @@ import { NextFunction, Request, Response } from "express";
 import fsp from "fs/promises";
 import multer from "multer";
 
-export async function dbOperation<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+export async function dbOperationWithRollback<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    /*
+        NOTE: If you try to query data within callback with
+        this function, you will receive old data, unless you
+        call connection.rollback first within the callback
+        manually
+    */
     let connection: mysql.PoolConnection | null = null;
 
     try {
@@ -117,7 +123,7 @@ export async function mysqlQueryTableByID<T extends RowDataPacket>({ table, id, 
     id: string | number;
     fields?: string | number
 }): Promise<T[]> {
-    return await dbOperation(async (connection) => {
+    return await dbOperationWithRollback(async (connection) => {
         return await mysqlGetQuery<T>(
             connection.execute(`SELECT ${fields} FROM ${table} WHERE id = ?`, [id])
         )

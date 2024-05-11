@@ -2,7 +2,7 @@ import { z } from "zod";
 import { DatabaseUser } from "./database_types.js";
 import { cartProductSchema, productSchema, userSchema } from "./schemas.js";
 import {
-    dbOperation,
+    dbOperationWithRollback,
     mysqlGetOrThrow,
     mysqlGetQuery,
     mysqlPrepareWithPlaceholders,
@@ -30,7 +30,7 @@ export const User = {
     create: async (data: UserCreate) => {
         const hashedPassword = await new Argon2id().hash(data.password);
         const userId = generateId(15);
-        await dbOperation(async (connection) => {
+        await dbOperationWithRollback(async (connection) => {
             const userInsert = await connection.execute<ResultSetHeader>({
                 sql: "INSERT INTO user (id, username, hashed_password, is_admin) VALUES (:id, :username, :hashed_password, :is_admin)",
                 values: {
@@ -51,7 +51,7 @@ export const User = {
     update: async (data: UserUpdate) => {
         const hashedPassword = data.password == null ? null : await new Argon2id().hash(data.password);
 
-        await dbOperation(async (connection) => {
+        await dbOperationWithRollback(async (connection) => {
             await mysqlPrepareWithPlaceholders({
                 connection,
                 sql: `
@@ -73,7 +73,7 @@ export const User = {
         });
     },
     delete: async ({ id }: UserDelete) => {
-        await dbOperation(async (connection) => {
+        await dbOperationWithRollback(async (connection) => {
             await connection.execute(`DELETE FROM user WHERE id = ?`, [id]);
         });
     },
@@ -111,7 +111,7 @@ export const Product = {
 
         const fileNames = savedFileNames.sort((a, b) => a.index - b.index).map(({ fileName }) => fileName);
 
-        const { insertId } = await dbOperation(async (connection) => {
+        const { insertId } = await dbOperationWithRollback(async (connection) => {
             const [result] = await connection.execute<ResultSetHeader>({
                 sql: `
                     INSERT INTO product 
@@ -143,7 +143,7 @@ export const Product = {
     },
     update: async (data: ProductUpdate) => {
         let fileNames: string[];
-        return await dbOperation(async (connection) => {
+        return await dbOperationWithRollback(async (connection) => {
             if (data.existingImages != null) {
                 const oldProduct = productSerializer.parse(
                     await mysqlGetOrThrow<DatabaseUser>(
@@ -225,7 +225,7 @@ interface CartProductDelete extends Partial<z.output<typeof cartProductSchema>> 
 
 export const CartProduct = {
     create: async (data: CartProductCreate) => {
-        const { insertId } = await dbOperation(async (connection) => {
+        const { insertId } = await dbOperationWithRollback(async (connection) => {
             const [result] = await connection.execute<ResultSetHeader>({
                 sql: "INSERT INTO cart_product (product_id, cart_id, amount) VALUES (:product_id, :cart_id, :amount)",
                 values: {
@@ -241,12 +241,12 @@ export const CartProduct = {
         return insertId;
     },
     update: async (data: CartProductUpdate) => {
-        return await dbOperation(async (connection) => {
+        return await dbOperationWithRollback(async (connection) => {
             const [result] = await connection.execute<ResultSetHeader>({
                 sql: `
-                    UPDATE product 
+                    UPDATE cart_product 
                         SET
-                            amount = IF (:amount IS NULL, amount, :amount),
+                            amount = IF (:amount IS NULL, amount, :amount)
                     WHERE
                         id = :id
                 `,
@@ -261,7 +261,7 @@ export const CartProduct = {
         });
     },
     delete: async (data: CartProductDelete) => {
-        await dbOperation(async (connection) => {
+        await dbOperationWithRollback(async (connection) => {
             await connection.execute(`DELETE FROM cart_product WHERE id = ?`, [data.id]);
         });
     },

@@ -1,18 +1,9 @@
-import { ResultSetHeader } from "mysql2/promise";
-import { NextFunction, Request, Response } from "express";
-import { nanoid } from "nanoid";
-import { writeFile } from "fs/promises";
-import { BASE_DIR } from "../../backend/settings.js";
-import { DatabaseCart, DatabaseCartProduct, DatabaseProduct } from "../../backend/database_types.js";
-import { cartProductSerializer, productSerializer } from "../../backend/serializers.js";
-import { cartProductSchema, productSchema } from "../../backend/schemas.js";
-import { getImages } from "./_utils.js";
+import { Request, Response } from "express";
+import { DatabaseCartProduct } from "../../backend/database_types.js";
+import { cartProductSchema } from "../../backend/schemas.js";
 import {
-    dbOperation,
-    mysqlGetOrNull,
-    mysqlGetOrThrow,
+    dbOperationWithRollback,
     mysqlGetQuery,
-    mysqlQueryTableByID,
     routeWithErrorHandling,
 } from "../../backend/utils.js";
 import { CartProduct } from "../../backend/managers.js";
@@ -25,7 +16,7 @@ const update_products = routeWithErrorHandling(async (request: Request, response
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    return await dbOperationWithRollback(async (connection) => {
         const cartProducts = await mysqlGetQuery<DatabaseCartProduct>(
             connection.query(
                 `
@@ -51,6 +42,7 @@ const update_products = routeWithErrorHandling(async (request: Request, response
                     }, { message: "Product is not in cart." }),
             )
             .safeParseAsync(request.body);
+            
         if (!validation.success) {
             response.status(400).json(validation.error.flatten());
             return;

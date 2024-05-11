@@ -7,7 +7,7 @@ import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
-import { dbOperation, mysqlQueryTableByID, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlQueryTableByID, routeWithErrorHandling } from "../../backend/utils.js";
 import { rm } from "fs/promises";
 import { Product } from "../../backend/managers.js";
 
@@ -18,7 +18,7 @@ export default routeWithErrorHandling(async (request: Request, response: Respons
         return;
     }
 
-    await dbOperation(async (connection) => {
+    await dbOperationWithRollback(async (connection) => {
         const { newImages, existingImages } = getImages(request);
         const validation = await productSchema
             .required()

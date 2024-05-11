@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { DatabaseCart, DatabaseCartProduct } from "../../backend/database_types.js";
 import { cartSerializer } from "../../backend/serializers.js";
-import { dbOperation, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { CartProduct } from "../../backend/managers.js";
 
 const remove_product = routeWithErrorHandling(async (request: Request, response: Response) => {
@@ -11,7 +11,7 @@ const remove_product = routeWithErrorHandling(async (request: Request, response:
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    return await dbOperationWithRollback(async (connection) => {
         const cartProduct = await mysqlGetOrThrow<DatabaseCartProduct>(
             connection.execute(
                 `

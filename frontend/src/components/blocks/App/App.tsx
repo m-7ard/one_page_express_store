@@ -7,6 +7,8 @@ import { FilterType, PaginatedQuery, ProductType, User } from "../../../Types";
 import { Outlet } from "@tanstack/react-router";
 import { Popover } from "@headlessui/react";
 import RouteNavigator from "./RouteNavigator";
+import CartPopover from "../../elements/CartPopover";
+import { classed } from "@tw-classed/react";
 
 const rawFilters: { field_name: string; field_value: string }[] = JSON.parse(
     document.getElementById("filters")?.innerText ?? "[]",
@@ -42,10 +44,10 @@ export default function App() {
                             <RouteNavigator
                                 Trigger={({ setReferenceElement, open }) => (
                                     <Popover.Button ref={setReferenceElement} as="div">
-                                        <div className={getGreenSurfaceButtonClassName({ active: open })}>
+                                        <App.HeaderButton state={open ? 'active' : 'neutral'}>
                                             <div className="hidden sm:block">Navigate</div>
                                             <DocumentTextIcon className="h-4 w-4" />
-                                        </div>
+                                        </App.HeaderButton>
                                     </Popover.Button>
                                 )}
                             />
@@ -54,17 +56,26 @@ export default function App() {
                             <UserPopover
                                 Trigger={({ setReferenceElement, open }) => (
                                     <Popover.Button ref={setReferenceElement} as={Fragment}>
-                                        <div className={getGreenSurfaceButtonClassName({ active: open })}>
-                                            <div className="hidden sm:block">User</div>
+                                        <div className={[
+                                            "header@app__button",
+                                            open === true && "header@app__button--active"
+                                        ].join(' ')}>
+                                            <div data-role="text">User</div>
                                             <UserIcon className="h-4 w-4" />
                                         </div>
                                     </Popover.Button>
                                 )}
                             />
-                            <div className={getGreenSurfaceButtonClassName({ active: false })}>
-                                <div className="hidden sm:block">Cart</div>
-                                <ShoppingCartIcon className="h-4 w-4" />
-                            </div>
+                            <CartPopover
+                                Trigger={({ setReferenceElement, open }) => (
+                                    <Popover.Button ref={setReferenceElement} as={Fragment}>
+                                        <div className={getGreenSurfaceButtonClassName({ active: open })}>
+                                            <div className="hidden sm:block">Cart</div>
+                                            <ShoppingCartIcon className="h-4 w-4" />
+                                        </div>
+                                    </Popover.Button>
+                                )}
+                            />
                         </div>
                     </div>
                     <Outlet />
@@ -100,3 +111,24 @@ export function getGreenSurfaceButtonClassName({ active = false }: { active?: bo
             : "bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200",
     ].join(" ");
 }
+
+const ButtonLike = classed(
+    "div",
+    "flex items-center leading-none content-box transition-colors cursor-pointer border select-none",
+);
+const BaseButton = classed("button", "gap-2 px-4 py-2");
+
+App.HeaderButton = classed(
+    "button",
+    "border-[#23231A]",
+    {
+        variants: {
+            state: {
+                active: "bg-[#38382A] text-gray-200 shadow-none",
+                neutral: "bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200",
+            },
+        }
+    },
+    ButtonLike,
+    BaseButton,
+);

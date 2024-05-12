@@ -16,7 +16,7 @@ export const productSchema = z.object({
                     const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM product WHERE id = ?`, [
                         value,
                     ]);
-                    return result.length === 1;
+                    return result.length !== 0;
                 });
             },
             { message: "Product doesn't exist." },
@@ -103,7 +103,7 @@ export const productSchema = z.object({
     user_id: z.string().refine(async (value) => {
         return await dbOperationWithRollback(async (connection) => {
             const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM user WHERE id = ?`, [value]);
-            return result.length === 1;
+            return result.length !== 0;
         });
     }),
 });
@@ -120,20 +120,20 @@ export const cartProductSchema = z.object({
         .number()
         .min(1)
         .refine(
-            async (value) => (await mysqlQueryTableByID({ table: "cart_product", id: value, fields: 1 })).length === 1,
+            async (value) => (await mysqlQueryTableByID({ table: "cart_product", id: value, fields: 1 })).length !== 0,
             { message: "Cart Product does not exist." },
         )
         .optional(),
     cart_id: z.coerce
         .number()
         .min(1)
-        .refine(async (value) => (await mysqlQueryTableByID({ table: "cart", id: value, fields: 1 })).length === 1, {
+        .refine(async (value) => (await mysqlQueryTableByID({ table: "cart", id: value, fields: 1 })).length !== 0, {
             message: "Cart does not exist.",
         }),
     product_id: z.coerce
         .number()
         .min(1)
-        .refine(async (value) => (await mysqlQueryTableByID({ table: "product", id: value, fields: 1 })).length === 1, {
+        .refine(async (value) => (await mysqlQueryTableByID({ table: "product", id: value, fields: 1 })).length !== 0, {
             message: "Product does not exist.",
         }),
     amount: z.coerce.number().min(1),

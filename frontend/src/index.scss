@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+    font-family: "Roboto", sans-serif;
+}
+
+@layer components {
+    .button-like {
+        @apply flex items-center leading-none box-content transition-colors cursor-pointer border select-none;
+    }
+
+    .button-base {
+        @apply gap-2 px-4 py-2;
+    }
+
+    .header\@app__button {
+        @apply button-like button-base border-[#23231A];
+
+        &:not(.header\@app__button--active) {
+            @apply bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200;
+        }
+
+        &--active {
+            @apply bg-[#38382A] text-gray-200 shadow-none;
+        }
+
+        [data-role="text"] {
+            @apply hidden sm:block;
+        }
+    }
+}

@@ -16,13 +16,13 @@ import {
     useNavigate,
 } from "@tanstack/react-router";
 import { FormErrors } from "./components/forms/GenericForm";
-import { User } from "../../../Types";
+import { UserType } from "../../../Types";
 import { useAppContext } from "../../../Context";
 import { createUseContext, useGenericForm } from "../../../utils";
 import App from "../linked/App/App";
 
 const [AuthContext, useAuthContext] = createUseContext<{
-    user: User;
+    user: UserType;
 }>("useAuthContext has to be used within <AuthContext.Provider>");
 
 function AuthWrapper({ children }: React.PropsWithChildren) {
@@ -87,7 +87,7 @@ UserPopover.Panel = function Panel({
     popper: { styles, attributes },
 }: React.ComponentProps<AbstractPopoverPanel>) {
     const queryClient = useQueryClient();
-    const user = queryClient.getQueryData<User>(["user"]);
+    const user = queryClient.getQueryData<UserType>(["user"]);
     const router = createRouter({
         routeTree,
         history: createMemoryHistory({ initialEntries: [user == null ? "/login" : "/profile"] }),
@@ -302,7 +302,7 @@ function Profile() {
         onSuccess: () => {
             queryClient.setQueriesData(
                 {
-                    queryKey: ["user"],
+                    queryKey: ["user_info_collection"],
                 },
                 () => null,
             );

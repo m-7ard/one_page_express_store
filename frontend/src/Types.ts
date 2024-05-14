@@ -1,7 +1,13 @@
-export interface User {
+export interface UserType {
     id: string;
 	username: string;
     is_admin: boolean;
+}
+
+export interface CartType {
+    id: number;
+    products: ProductType[];
+    user_id: UserType['id'];
 }
 
 export interface FilterType {

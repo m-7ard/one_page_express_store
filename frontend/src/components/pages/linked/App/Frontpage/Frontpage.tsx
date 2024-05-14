@@ -2,10 +2,10 @@ import { AdjustmentsHorizontalIcon, ArrowDownIcon, ChevronUpDownIcon, PlusIcon }
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useRef } from "react";
 import { QueryStringContext, useQueryStringContext } from "../../../../../Context";
-import { PaginatedQuery, ProductType, User } from "../../../../../Types";
-import FilterProductsDialog from "../../../../blocks/Frontpage/Product/FilterProductsDialog";
-import CreateProductDialog from "../../../../blocks/Frontpage/Product/CreateProductDialog";
-import Product from "../../../../blocks/Frontpage/Product/Product";
+import { PaginatedQuery, ProductType, UserType } from "../../../../../Types";
+import FilterProductsDialog from "../../../unlinked/FilterProductsDialog";
+import CreateProductDialog from "../../../unlinked/CreateProductDialog";
+import Product from "./Product/Product";
 import { Popover } from "@headlessui/react";
 import SortProductsPopover from "../../../../blocks/Frontpage/Product/SortProductsPopover";
 import { PageNavigation } from "../../../../blocks/Frontpage/PageNavigation";
@@ -48,7 +48,7 @@ export default function Frontpage() {
         },
     });
 
-    const user = queryClient.getQueryData<User>(["user"]);
+    const user = queryClient.getQueryData<UserType>(["user"]);
 
     return (
         productsQuery.isSuccess && (

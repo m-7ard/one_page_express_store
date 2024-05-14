@@ -1,9 +1,10 @@
 import { createContext, useContext } from "react";
-import { FilterType, ProductType, User } from "./Types";
+import { CartType, FilterType, ProductType, UserType } from "./Types";
 import { createUseContext } from "./utils";
 
 interface AppContextInterface {
-    user?: User;
+    user?: UserType;
+    cart?: CartType;
     filters: FilterType[];
 }
 

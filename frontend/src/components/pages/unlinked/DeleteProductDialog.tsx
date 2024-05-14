@@ -11,15 +11,15 @@ import {
     useRouterState,
 } from "@tanstack/react-router";
 import { XMarkIcon } from "@heroicons/react/24/solid";
-import AbstractDialog from "../../../elements/abstract/AbstractDialog";
+import AbstractDialog from "../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
-import { useGenericForm } from "../../../../utils";
+import { useGenericForm } from "../../../utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
-import { ProductType } from "../../../../Types";
-import { useAbstractDialogContext, useProductContext } from "../../../../Context";
-import App from "../../../pages/linked/App/App";
-import GenericForm from "../../../elements/forms/GenericForm";
+import { ProductType } from "../../../Types";
+import { useAbstractDialogContext, useProductContext } from "../../../Context";
+import App from "../linked/App/App";
+import GenericForm from "../../elements/forms/GenericForm";
 
 const rootRoute = createRootRoute({
     component: () => <Outlet />,

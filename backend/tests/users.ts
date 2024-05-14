@@ -1,16 +1,21 @@
 import { createSessionCookie, objectToFormData, test, testCase } from "./_utils.js";
-import { userSerializer } from "../backend/serializers.js";
+import { cartSerializer, userSerializer } from "../backend/serializers.js";
 import assert from "assert";
 import { z } from "zod";
-import { productsMixin, usersMixin } from "./mixins.js";
-import { fileExists, mysqlGetOrNull, mysqlGetOrThrow, mysqlGetQuery } from "../backend/utils.js";
-import { DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
+import { usersMixin } from "./mixins.js";
+import { mysqlGetOrNull, mysqlGetOrThrow, mysqlGetQuery } from "../backend/utils.js";
+import { DatabaseCart, DatabaseProduct, DatabaseUser } from "../backend/database_types.js";
 import context, { getFromContext } from "../backend/context.js";
 import { env } from "process";
 import { DatabaseSession } from "lucia";
 import { RowDataPacket } from "mysql2/promise";
 
 context.testsToRun = "__all__";
+
+type UsersUserApiResponseData = {
+    user: z.output<typeof userSerializer>;
+    cart: z.output<typeof cartSerializer>;
+};
 
 testCase(async () => {
     const { lucia } = await import("../lib/auth.js");
@@ -32,15 +37,27 @@ testCase(async () => {
         });
 
         assert.strictEqual(response.status, 200);
+
         const sessionCookie = response.headers
             .getSetCookie()
             .find((cookie) => cookie.startsWith(lucia.sessionCookieName));
         assert.notEqual(sessionCookie, null);
-        const sessionId = lucia.readSessionCookie(sessionCookie as string);
+
+        const sessionId = lucia.readSessionCookie(sessionCookie as string)!;
         const sessionQuery = await mysqlGetQuery<DatabaseSession & RowDataPacket>(
             pool.execute("SELECT * FROM user_session WHERE id = ?", [sessionId]),
         );
         assert.strictEqual(sessionQuery.length, 1);
+
+        const { session, user } = await lucia.validateSession(sessionId);
+        const data: UsersUserApiResponseData = await response.json();
+        const cart = await mysqlGetOrThrow<DatabaseCart>(
+            pool.execute("SELECT * FROM cart WHERE user_id = ?", [data.user.id]),
+        );
+        assert.deepStrictEqual(data, {
+            user: user,
+            cart: await cartSerializer.parseAsync(cart),
+        });
     }, "Login With Valid Data And Create Session");
 
     await test(async () => {
@@ -52,16 +69,24 @@ testCase(async () => {
                 Cookie: CUSTOMER_1_COOKIE,
             },
         });
-
         assert.strictEqual(response.status, 200);
+
         // Check that a new session was not created
         const sessionQuery = await mysqlGetQuery<DatabaseSession & RowDataPacket>(
             pool.execute("SELECT * FROM user_session WHERE user_id = ?", [users.CUSTOMER_1.id]),
         );
         assert.strictEqual(sessionQuery.length, 1);
+
         const sessionId = lucia.readSessionCookie(CUSTOMER_1_COOKIE)!;
         const { session, user } = await lucia.validateSession(sessionId);
-        assert.deepEqual(user, await response.json());
+        const data: UsersUserApiResponseData = await response.json();
+        const cart = await mysqlGetOrThrow<DatabaseCart>(
+            pool.execute("SELECT * FROM cart WHERE user_id = ?", [data.user.id]),
+        );
+        assert.deepStrictEqual(data, {
+            user: user,
+            cart: await cartSerializer.parseAsync(cart),
+        });
     }, "Skip Login When Already Logged In");
 
     await test(async () => {
@@ -78,20 +103,28 @@ testCase(async () => {
 
         assert.strictEqual(response.status, 201);
 
-        const data: z.infer<typeof userSerializer> = await response.json();
-        const newUser = await mysqlGetOrNull<DatabaseUser>(pool.execute("SELECT * FROM user WHERE id = ?", [data.id]));
+        const data: UsersUserApiResponseData = await response.json();
+        const newUser = await mysqlGetOrNull<DatabaseUser>(
+            pool.execute("SELECT * FROM user WHERE id = ?", [data.user.id]),
+        );
         const sessionCookie = response.headers
             .getSetCookie()
             .find((cookie) => cookie.startsWith(lucia.sessionCookieName));
 
         assert.notEqual(sessionCookie, null);
-        assert.deepEqual(data, userSerializer.parse(newUser));
+        assert.deepStrictEqual(data.user, userSerializer.parse(newUser));
 
         const sessionQuery = await mysqlGetQuery<DatabaseSession & RowDataPacket>(
-            pool.execute("SELECT * FROM user_session WHERE user_id = ?", [data.id]),
+            pool.execute("SELECT * FROM user_session WHERE user_id = ?", [data.user.id]),
         );
 
         assert.strictEqual(sessionQuery.length, 1);
+
+        const cart = await mysqlGetOrThrow<DatabaseCart>(
+            pool.execute("SELECT * FROM cart WHERE user_id = ?", [data.user.id]),
+        );
+
+        assert.deepStrictEqual(data.cart, await cartSerializer.parseAsync(cart));
     }, "Register With Valid Data And Create Session");
 
     await test(async () => {
@@ -156,11 +189,17 @@ testCase(async () => {
 
         assert.strictEqual(response.status, 200);
 
-        const customerOne = await mysqlGetOrNull<DatabaseUser>(
+        const customerOne = await mysqlGetOrThrow<DatabaseUser>(
             pool.execute("SELECT * FROM user WHERE id = ?", [users.CUSTOMER_1.id]),
         );
+        const customerOneCart = await mysqlGetOrThrow<DatabaseCart>(
+            pool.execute("SELECT * FROM cart WHERE user_id = ?", [customerOne.id]),
+        );
         const data = await response.json();
-        assert.deepEqual(userSerializer.parse(customerOne), data);
+        assert.deepStrictEqual(data, {
+            user: userSerializer.parse(customerOne),
+            cart: await cartSerializer.parseAsync(customerOneCart)
+        });
     }, "Get User Data When Logged In");
 
     await test(async () => {

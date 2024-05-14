@@ -13,8 +13,11 @@ button:focus {
   .mixin-button-like {
     @apply flex items-center leading-none box-content transition-colors cursor-pointer border select-none;
   }
+  .mixin-button-sm {
+    @apply gap-0.5 px-1 py-0.5 text-xs;
+  }
   .mixin-button-base {
-    @apply gap-2 px-4 py-2;
+    @apply gap-2 px-4 py-1 text-base;
   }
   .theme-button-generic-white {
     @apply border border-gray-900 text-gray-900;
@@ -24,6 +27,15 @@ button:focus {
   }
   .theme-button-generic-white--active {
     @apply bg-gray-200;
+  }
+  .theme-button-generic-yellow {
+    @apply border border-gray-900 text-gray-900;
+  }
+  .theme-button-generic-yellow:not(.theme-button-generic-yellow--active) {
+    @apply bg-yellow-300 hover:bg-yellow-400;
+  }
+  .theme-button-generic-yellow--active {
+    @apply bg-yellow-400;
   }
   .theme-item-generic-white {
     @apply text-gray-900;

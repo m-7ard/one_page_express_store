@@ -1,11 +1,10 @@
 import { verifyRequestOrigin } from "lucia";
 import ejs from "ejs";
-import express, { NextFunction, Request, Response } from "express";
+import express from "express";
 import { router as APIrouter } from "../api/index.js";
 import path from "path";
 import { BASE_DIR } from "./settings.js";
 import filters from "../filters.json" assert { type: "json" };
-import multer from "multer";
 
 export async function setUpApp() {
     const app = express();

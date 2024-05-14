@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { Dialog } from "@headlessui/react";
 import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import AbstractDialog, { AbstractDialogTrigger } from "../../../elements/abstract/AbstractDialog";
-import { ProductType } from "../../../../Types";
+import AbstractDialog, { AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
+import { ProductType } from "../../../Types";
 
 export default function InformationDisplayDialog({
     Trigger,

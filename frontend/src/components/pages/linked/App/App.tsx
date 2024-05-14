@@ -3,7 +3,7 @@ import UserPopover from "../../unlinked/UserPopover";
 import { useQuery } from "@tanstack/react-query";
 import React, { Fragment, useRef } from "react";
 import { AppContext } from "../../../../Context";
-import { FilterType, PaginatedQuery, ProductType, User } from "../../../../Types";
+import { CartType, FilterType, PaginatedQuery, ProductType, UserType } from "../../../../Types";
 import { Outlet } from "@tanstack/react-router";
 import { Popover } from "@headlessui/react";
 import RouteNavigator from "../../../elements/RouteNavigator";
@@ -19,8 +19,11 @@ const filters: FilterType[] = rawFilters.map(({ field_name, field_value }) => ({
 }));
 
 export default function App() {
-    const userQuery = useQuery<User>({
-        queryKey: ["user"],
+    const userQuery = useQuery<{
+        user: UserType;
+        cart: CartType;
+    }>({
+        queryKey: ["user_info_collection"],
         queryFn: async () => {
             const response = await fetch("/api/users/user/");
             if (response.ok) {
@@ -32,69 +35,71 @@ export default function App() {
         },
     });
 
-    const user = userQuery.data;
+    if (!userQuery.isSuccess) {
+        return;
+    }
+
+    const { user, cart } = userQuery.data;
 
     return (
-        userQuery.isSuccess && (
-            <AppContext.Provider value={{ user, filters }}>
-                <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
-                    <div
-                        style={{ zIndex: 100 }}
-                        className="flex flex-row items-center relative justify-between gap-8 px-4 py-2 text-gray-50 shadow z-50 bg-[#38382A] border-b border-[#23231A]"
-                    >
-                        <div className="flex flex-row gap-4 items-center">
-                            <RouteNavigator
-                                Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button
-                                        ref={setReferenceElement}
-                                        className={[
-                                            "header@app__button",
-                                            open === true && "header@app__button--active",
-                                        ].join(" ")}
-                                    >
-                                        <div className="hidden sm:block">Navigate</div>
-                                        <DocumentTextIcon className="h-4 w-4" />
-                                    </Popover.Button>
-                                )}
-                            />
-                        </div>
-                        <div className="flex flex-row gap-4 items-center">
-                            <UserPopover
-                                Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button
-                                        ref={setReferenceElement}
-                                        className={[
-                                            "header@app__button",
-                                            open === true && "header@app__button--active",
-                                        ].join(" ")}
-                                    >
-                                        <div data-role="text">User</div>
-                                        <UserIcon className="h-4 w-4" />
-                                    </Popover.Button>
-                                )}
-                            />
-                            {user != null && (
-                                <CartPopover
-                                    Trigger={({ setReferenceElement, open }) => (
-                                        <Popover.Button
-                                            ref={setReferenceElement}
-                                            className={[
-                                                "header@app__button",
-                                                open === true && "header@app__button--active",
-                                            ].join(" ")}
-                                        >
-                                            <div className="hidden sm:block">Cart</div>
-                                            <ShoppingCartIcon className="h-4 w-4" />
-                                        </Popover.Button>
-                                    )}
-                                />
+        <AppContext.Provider value={{ user, filters, cart }}>
+            <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
+                <div
+                    style={{ zIndex: 100 }}
+                    className="flex flex-row items-center relative justify-between gap-8 px-4 py-2 text-gray-50 shadow z-50 bg-[#38382A] border-b border-[#23231A]"
+                >
+                    <div className="flex flex-row gap-4 items-center">
+                        <RouteNavigator
+                            Trigger={({ setReferenceElement, open }) => (
+                                <Popover.Button
+                                    ref={setReferenceElement}
+                                    className={[
+                                        "header@app__button",
+                                        open === true && "header@app__button--active",
+                                    ].join(" ")}
+                                >
+                                    <div className="hidden sm:block">Navigate</div>
+                                    <DocumentTextIcon className="h-4 w-4" />
+                                </Popover.Button>
                             )}
-                        </div>
+                        />
                     </div>
-                    <Outlet />
+                    <div className="flex flex-row gap-4 items-center">
+                        <UserPopover
+                            Trigger={({ setReferenceElement, open }) => (
+                                <Popover.Button
+                                    ref={setReferenceElement}
+                                    className={[
+                                        "header@app__button",
+                                        open === true && "header@app__button--active",
+                                    ].join(" ")}
+                                >
+                                    <div data-role="text">User</div>
+                                    <UserIcon className="h-4 w-4" />
+                                </Popover.Button>
+                            )}
+                        />
+                        {user != null && (
+                            <CartPopover
+                                Trigger={({ setReferenceElement, open }) => (
+                                    <Popover.Button
+                                        ref={setReferenceElement}
+                                        className={[
+                                            "header@app__button",
+                                            open === true && "header@app__button--active",
+                                        ].join(" ")}
+                                    >
+                                        <div className="hidden sm:block">Cart</div>
+                                        <ShoppingCartIcon className="h-4 w-4" />
+                                    </Popover.Button>
+                                )}
+                            />
+                        )}
+                    </div>
                 </div>
-            </AppContext.Provider>
-        )
+                <Outlet />
+            </div>
+        </AppContext.Provider>
     );
 }
 

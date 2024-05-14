@@ -1,15 +1,16 @@
-import { ProductType } from "../../../../Types";
-import EditProductDialog from "./EditProductDialog";
-import { ProductContext, useAppContext } from "../../../../Context";
-import DeleteProductDialog from "./DeleteProductDialog";
-import App from "../../../pages/linked/App/App";
-import InformationDisplayDialog from "./ProductInformationDisplayDialog";
+import { ProductType } from "../../../../../../Types";
+import EditProductDialog from "../../../../unlinked/EditProductDialog";
+import { ProductContext, useAppContext } from "../../../../../../Context";
+import DeleteProductDialog from "../../../../unlinked/DeleteProductDialog";
+import App from "../../App";
+import InformationDisplayDialog from "../../../../unlinked/ProductInformationDisplayDialog";
 
-export default function Product({ name, price, images, description, kind, specification, id }: ProductType) {
+export default function Product(product: ProductType) {
     const { user } = useAppContext();
+    const { name, price, images, description, kind, specification } = product;
 
     return (
-        <ProductContext.Provider value={{ name, price, images, description, kind, specification, id }}>
+        <ProductContext.Provider value={product}>
             <div className="flex flex-col py-8 gap-4 col-span-1 relative mt-px">
                 <div className="bg-gray-600 w-full relative border border-gray-900" style={{ aspectRatio: 0.711 }}>
                     <img

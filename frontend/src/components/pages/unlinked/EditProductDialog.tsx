@@ -1,6 +1,5 @@
 import {
     HistoryState,
-    Link,
     Navigate,
     Outlet,
     RouterProvider,
@@ -11,20 +10,20 @@ import {
     useNavigate,
     useRouterState,
 } from "@tanstack/react-router";
-import { PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import AbstractDialog, { AbstractDialogPanel, AbstractDialogTrigger } from "../../../elements/abstract/AbstractDialog";
+import { XMarkIcon } from "@heroicons/react/24/solid";
+import AbstractDialog from "../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
-import { FormCharFieldWidget } from "../../../elements/forms/widgets/FormCharFieldWidget";
-import LazyFormImageUploadWidget from "../../../elements/forms/widgets/LazyFormImageUpload";
-import { SpecificationInputWidget } from "../../../elements/forms/widgets/FormSpecificationWidget";
-import { FormTextAreaWidget } from "../../../elements/forms/widgets/FormTextAreaWidget";
-import { useGenericForm } from "../../../../utils";
-import Fieldset from "../../../elements/forms/Fieldset";
+import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldWidget";
+import LazyFormImageUploadWidget from "../../elements/forms/widgets/LazyFormImageUpload";
+import { FormTextAreaWidget } from "../../elements/forms/widgets/FormTextAreaWidget";
+import { useGenericForm } from "../../../utils";
+import Fieldset from "../../elements/forms/Fieldset";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
-import { ProductType } from "../../../../Types";
-import { useAbstractDialogContext } from "../../../../Context";
-import App from "../../../pages/linked/App/App";
+import { useCallback, useRef, useState } from "react";
+import { ProductType } from "../../../Types";
+import { useAbstractDialogContext, useProductContext } from "../../../Context";
+import { SpecificationInputWidget } from "../../elements/forms/widgets/FormSpecificationWidget";
+import App from "../linked/App/App";
 
 const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
 const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];
@@ -37,7 +36,7 @@ const rootRoute = createRootRoute({
 const formRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: "/",
-    component: CreateProductForm,
+    component: EditProductForm,
 });
 
 const successRoute = createRoute({
@@ -48,20 +47,23 @@ const successRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([formRoute, successRoute]);
 
-export default function CreateProductDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
-    return (
-        <AbstractDialog
-            Trigger={Trigger}
-            Panel={CreateProductDialog.Panel}
-        />
-    );
+export default function EditProductDialog({
+    Trigger,
+}: {
+    Trigger: React.FunctionComponent<{
+        onClick: () => void;
+    }>;
+}) {
+    return <AbstractDialog Trigger={Trigger} Panel={EditProductDialog.Panel} />;
 }
 
-CreateProductDialog.Panel = function Panel ({ onClose }: { onClose: () => void }) {
-    const router = useRef(createRouter({
-        routeTree,
-        history: createMemoryHistory({ initialEntries: ["/"] }),
-    }));
+EditProductDialog.Panel = function Panel({ onClose }: { onClose: () => void }) {
+    const router = useRef(
+        createRouter({
+            routeTree,
+            history: createMemoryHistory({ initialEntries: ["/"] }),
+        }),
+    );
 
     return (
         <Dialog.Panel className="m-auto p-4 max-w-prose w-full max-h-full overflow-hidden bg-yellow-50 relative text-gray-900  border border-gray-900 shadow">
@@ -71,12 +73,13 @@ CreateProductDialog.Panel = function Panel ({ onClose }: { onClose: () => void }
             {<RouterProvider router={router.current} />}
         </Dialog.Panel>
     );
-} 
+};
 
-function CreateProductForm() {
+function EditProductForm() {
     const queryClient = useQueryClient();
     const { errors, setErrors } = useGenericForm();
-    const [images, setImages] = useState<Array<File | string>>([]);
+    const product = useProductContext();
+    const [images, setImages] = useState<Array<string | File>>([]);
     const navigate = useNavigate({ from: "/" });
 
     const mutation = useMutation({
@@ -85,13 +88,12 @@ function CreateProductForm() {
             images.forEach((image, i) => {
                 formData.append(`image-${i}`, image);
             });
-            const response = await fetch("/api/products/create", {
-                method: "POST",
+            const response = await fetch(form.action, {
+                method: "PUT",
                 body: formData,
             });
             if (response.ok) {
-                const data: ProductType = await response.json();
-                return data;
+                return await response.json();
             }
 
             const errors = await response.json();
@@ -107,15 +109,14 @@ function CreateProductForm() {
     return (
         <form
             className="flex flex-col gap-4 overflow-hidden"
-            method="POST"
-            action="/api/products/create"
+            action={`/api/products/edit/${product.id}`}
             onSubmit={(event) => {
                 event.preventDefault();
                 mutation.mutate({ form: event.currentTarget });
             }}
         >
-            <div className="text-xl font-bold">Create Product</div>
-            <App.Divider />
+            <div className="text-xl font-bold">Edit Product</div>
+            <hr className="h-0 w-full border-b-px border-gray-900"></hr>
             <div className="flex flex-col gap-4 h-full overflow-auto max-h-96">
                 <Fieldset
                     errors={errors}
@@ -123,12 +124,15 @@ function CreateProductForm() {
                         {
                             name: "name",
                             label: "Name",
-                            widget: FormCharFieldWidget({}),
+                            widget: FormCharFieldWidget({
+                                initial: product.name,
+                            }),
                         },
                         {
                             name: "description",
                             label: "Description",
                             widget: FormTextAreaWidget({
+                                initial: product.description,
                                 maxLength: 512,
                             }),
                             optional: true,
@@ -138,12 +142,15 @@ function CreateProductForm() {
                             label: "Price",
                             widget: FormCharFieldWidget({
                                 type: "numeric",
+                                initial: product.price,
                             }),
                         },
                         {
                             name: "kind",
                             label: "Kind",
-                            widget: FormCharFieldWidget({}),
+                            widget: FormCharFieldWidget({
+                                initial: product.kind,
+                            }),
                             helperText: "Kind will be used for filtering. Is case sensitive.",
                         },
                         {
@@ -153,9 +160,10 @@ function CreateProductForm() {
                                 maxFileSize: MAX_IMAGE_SIZE,
                                 maxFileLength: MAX_IMAGES_LENGTH,
                                 acceptedFormats: ACCEPTED_FILE_FORMATS,
-                                onChange: (value) => {
+                                onChange: useCallback((value: Array<string | File>) => {
                                     setImages(value);
-                                },
+                                }, []),
+                                initial: product.images,
                             }),
                             optional: true,
                             helperText: `Accepted formats: ${ACCEPTED_FILE_FORMATS.map((format) => format.split("/")[1]).join(", ")}; Max file size: ${MAX_IMAGE_SIZE / 1024 ** 2}MB; Max ${MAX_IMAGES_LENGTH} Images;`,
@@ -163,13 +171,17 @@ function CreateProductForm() {
                         {
                             name: "specification",
                             label: "Specification",
-                            widget: SpecificationInputWidget({}),
+                            widget: SpecificationInputWidget({
+                                initial: product.specification,
+                            }),
                         },
                     ]}
                 />
             </div>
-            <App.Divider />
-            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>Create</button>
+            <hr className="h-0 w-full border-b-px border-gray-900"></hr>
+            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>
+                Edit
+            </button>
         </form>
     );
 }
@@ -186,16 +198,9 @@ function Success() {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="w-full text-center">Successfully Created "{product.name}"</div>
-            <App.Divider />
-            <Link
-                to={"/"}
-                className={["bg-yellow-300 hover:bg-yellow-400", "justify-center", App.BaseButtonClassNames].join(" ")}
-            >
-                Create Another
-            </Link>
+            <div className="w-full text-center">Successfully Edited "{product.name}"</div>
             <div
-                className={["bg-gray-300 hover:bg-gray-400", "justify-center", App.BaseButtonClassNames].join(" ")}
+                className={`justify-center ${App.BaseButtonClassNames} bg-gray-300 hover:bg-gray-400`}
                 onClick={() => setOpen(false)}
             >
                 Close

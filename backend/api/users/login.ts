@@ -2,11 +2,12 @@ import { z } from "zod";
 import { Request, Response } from "express";
 import mysql from "mysql2/promise";
 import { DatabaseUser, pool } from "../../lib/db.js";
-import { dbOperationWithRollback, mysqlGetOrThrow } from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { Argon2id } from "oslo/password";
 import { generateId } from "lucia";
 import { lucia } from "../../lib/auth.js";
-import { userSerializer } from "../../backend/serializers.js";
+import { cartSerializer, userSerializer } from "../../backend/serializers.js";
+import { DatabaseCart } from "../../backend/database_types.js";
 
 const schema = z
     .object({
@@ -30,26 +31,43 @@ const schema = z
         { message: "Incorrect username or password." },
     );
 
-export default async function login(request: Request, response: Response) {
-    if (response.locals.session) {
-        response.status(200).json(response.locals.user);
-        return;
-    }
-
+const login = routeWithErrorHandling(async function login(request: Request, response: Response) {
     await dbOperationWithRollback(async (connection) => {
+        if (response.locals.session) {
+            const user = response.locals.user!;
+            const cart = await mysqlGetOrThrow<DatabaseCart>(
+                connection.execute("SELECT * FROM cart WHERE user_id = ?", [user.id]),
+            );
+            response.status(200).json({
+                user: user,
+                cart: await cartSerializer.parseAsync(cart),
+            });
+            return;
+        }
+
         const validation = await schema.safeParseAsync(request.body);
         if (validation.success === true) {
-            const user = await mysqlGetOrThrow<DatabaseUser>(
+            const dbUser = await mysqlGetOrThrow<DatabaseUser>(
                 connection.execute("SELECT * FROM user WHERE username = ?", [request.body.username]),
             );
 
-            const session = await lucia.createSession(user.id, {});
+            const session = await lucia.createSession(dbUser.id, {});
             const sessionCookie = lucia.createSessionCookie(session.id);
             response.appendHeader("Set-Cookie", sessionCookie.serialize());
 
-            response.status(200).json(userSerializer.parse(user));
+            const cart = await mysqlGetOrThrow<DatabaseCart>(
+                connection.execute("SELECT * FROM cart WHERE user_id = ?", [dbUser.id]),
+            );
+
+            response.status(200).json({
+                user: userSerializer.parse(dbUser),
+                cart: await cartSerializer.parseAsync(cart),
+            });
         } else {
             response.status(400).json(validation.error.flatten());
+            return;
         }
     });
-}
+});
+
+export default login;

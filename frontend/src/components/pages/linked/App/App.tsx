@@ -1,13 +1,13 @@
 import { DocumentTextIcon, ShoppingCartIcon, UserIcon } from "@heroicons/react/24/solid";
-import UserPopover from "../UserPopover/UserPopover";
+import UserPopover from "../../unlinked/UserPopover";
 import { useQuery } from "@tanstack/react-query";
 import React, { Fragment, useRef } from "react";
-import { AppContext } from "../../../Context";
-import { FilterType, PaginatedQuery, ProductType, User } from "../../../Types";
+import { AppContext } from "../../../../Context";
+import { FilterType, PaginatedQuery, ProductType, User } from "../../../../Types";
 import { Outlet } from "@tanstack/react-router";
 import { Popover } from "@headlessui/react";
-import RouteNavigator from "./RouteNavigator";
-import CartPopover from "../../elements/CartPopover";
+import RouteNavigator from "../../../elements/RouteNavigator";
+import CartPopover from "../../unlinked/CartPopover";
 import { classed } from "@tw-classed/react";
 
 const rawFilters: { field_name: string; field_value: string }[] = JSON.parse(
@@ -32,9 +32,11 @@ export default function App() {
         },
     });
 
+    const user = userQuery.data;
+
     return (
         userQuery.isSuccess && (
-            <AppContext.Provider value={{ user: userQuery.data, filters }}>
+            <AppContext.Provider value={{ user, filters }}>
                 <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
                     <div
                         style={{ zIndex: 100 }}
@@ -43,11 +45,15 @@ export default function App() {
                         <div className="flex flex-row gap-4 items-center">
                             <RouteNavigator
                                 Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button ref={setReferenceElement} as="div">
-                                        <App.HeaderButton state={open ? 'active' : 'neutral'}>
-                                            <div className="hidden sm:block">Navigate</div>
-                                            <DocumentTextIcon className="h-4 w-4" />
-                                        </App.HeaderButton>
+                                    <Popover.Button
+                                        ref={setReferenceElement}
+                                        className={[
+                                            "header@app__button",
+                                            open === true && "header@app__button--active",
+                                        ].join(" ")}
+                                    >
+                                        <div className="hidden sm:block">Navigate</div>
+                                        <DocumentTextIcon className="h-4 w-4" />
                                     </Popover.Button>
                                 )}
                             />
@@ -55,27 +61,34 @@ export default function App() {
                         <div className="flex flex-row gap-4 items-center">
                             <UserPopover
                                 Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button ref={setReferenceElement} as={Fragment}>
-                                        <div className={[
+                                    <Popover.Button
+                                        ref={setReferenceElement}
+                                        className={[
                                             "header@app__button",
-                                            open === true && "header@app__button--active"
-                                        ].join(' ')}>
-                                            <div data-role="text">User</div>
-                                            <UserIcon className="h-4 w-4" />
-                                        </div>
+                                            open === true && "header@app__button--active",
+                                        ].join(" ")}
+                                    >
+                                        <div data-role="text">User</div>
+                                        <UserIcon className="h-4 w-4" />
                                     </Popover.Button>
                                 )}
                             />
-                            <CartPopover
-                                Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button ref={setReferenceElement} as={Fragment}>
-                                        <div className={getGreenSurfaceButtonClassName({ active: open })}>
+                            {user != null && (
+                                <CartPopover
+                                    Trigger={({ setReferenceElement, open }) => (
+                                        <Popover.Button
+                                            ref={setReferenceElement}
+                                            className={[
+                                                "header@app__button",
+                                                open === true && "header@app__button--active",
+                                            ].join(" ")}
+                                        >
                                             <div className="hidden sm:block">Cart</div>
                                             <ShoppingCartIcon className="h-4 w-4" />
-                                        </div>
-                                    </Popover.Button>
-                                )}
-                            />
+                                        </Popover.Button>
+                                    )}
+                                />
+                            )}
                         </div>
                     </div>
                     <Outlet />
@@ -94,24 +107,7 @@ App.InputElementClassNames = "absolute inset-0 transition-colors p-2";
 
 App.Divider = () => <hr className="h-0 w-full border-b-px border-gray-900"></hr>;
 
-export function getWhiteSurfaceButtonClassName({ active = false }: { active?: boolean }) {
-    return [
-        App.BaseButtonClassNames,
-        "border-gray-900 text-gray-900",
-        active ? "bg-gray-200" : "bg-gray-100 hover:bg-gray-200",
-    ].join(" ");
-}
-
-export function getGreenSurfaceButtonClassName({ active = false }: { active?: boolean }) {
-    return [
-        App.BaseButtonClassNames,
-        "border-[#23231A]",
-        active
-            ? "bg-[#38382A] text-gray-200 shadow-none"
-            : "bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200",
-    ].join(" ");
-}
-
+/*
 const ButtonLike = classed(
     "div",
     "flex items-center leading-none content-box transition-colors cursor-pointer border select-none",
@@ -127,8 +123,9 @@ App.HeaderButton = classed(
                 active: "bg-[#38382A] text-gray-200 shadow-none",
                 neutral: "bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200",
             },
-        }
+        },
     },
     ButtonLike,
     BaseButton,
 );
+*/

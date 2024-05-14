@@ -24,7 +24,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { ProductType } from "../../../../Types";
 import { useAbstractDialogContext } from "../../../../Context";
-import App from "../../App/App";
+import App from "../../../pages/linked/App/App";
 
 const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
 const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];

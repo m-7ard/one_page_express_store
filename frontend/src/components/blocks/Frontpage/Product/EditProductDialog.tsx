@@ -23,7 +23,7 @@ import { useCallback, useRef, useState } from "react";
 import { ProductType } from "../../../../Types";
 import { useAbstractDialogContext, useProductContext } from "../../../../Context";
 import { SpecificationInputWidget } from "../../../elements/forms/widgets/FormSpecificationWidget";
-import App from "../../App/App";
+import App from "../../../pages/linked/App/App";
 
 const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
 const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];

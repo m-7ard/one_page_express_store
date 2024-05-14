@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { createUseContext } from "../../../../utils";
 import { ChevronRightIcon } from "@heroicons/react/24/solid";
 import { usePopper } from "react-popper-2";
-import App from "../../../blocks/App/App";
+import App from "../../../pages/linked/App/App";
 
 export type Value = string;
 export type Choice = {

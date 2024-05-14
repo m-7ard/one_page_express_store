@@ -1,10 +1,10 @@
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import App from "./components/blocks/App/App";
 import { RouterProvider, createRootRoute, createRoute, createRouter } from "@tanstack/react-router";
-import Frontpage, { QueryStringProvider } from "./components/blocks/Frontpage/Frontpage";
-import Dashboard from "./components/blocks/Dashboard/Dashboard";
+import Frontpage, { QueryStringProvider } from "./components/pages/linked/App/Frontpage/Frontpage";
+import Dashboard from "./components/pages/linked/App/Dashboard/Dashboard";
+import App from "./components/pages/linked/App/App";
 
 const queryClient = new QueryClient({
     defaultOptions: {

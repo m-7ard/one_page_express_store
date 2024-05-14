@@ -1,7 +1,7 @@
 import { Popover } from "@headlessui/react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import AbstractPopover, { AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
-import App from "./App";
+import AbstractPopover, { AbstractPopoverTrigger } from "./abstract/AbstractPopover";
+import App from "../pages/linked/App/App";
 
 const CHOICES = [
     { label: "App", value: "/" },

@@ -1,21 +1,15 @@
-import {
-    AdjustmentsHorizontalIcon,
-    ArrowDownIcon,
-    ChevronUpDownIcon,
-    PlusIcon,
-} from "@heroicons/react/24/solid";
+import { AdjustmentsHorizontalIcon, ArrowDownIcon, ChevronUpDownIcon, PlusIcon } from "@heroicons/react/24/solid";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useRef } from "react";
-import { QueryStringContext, useQueryStringContext } from "../../../Context";
-import { PaginatedQuery, ProductType, User } from "../../../Types";
-import FilterProductsDialog from "./Product/FilterProductsDialog";
-import CreateProductDialog from "./Product/CreateProductDialog";
-import Product from "./Product/Product";
+import { QueryStringContext, useQueryStringContext } from "../../../../../Context";
+import { PaginatedQuery, ProductType, User } from "../../../../../Types";
+import FilterProductsDialog from "../../../../blocks/Frontpage/Product/FilterProductsDialog";
+import CreateProductDialog from "../../../../blocks/Frontpage/Product/CreateProductDialog";
+import Product from "../../../../blocks/Frontpage/Product/Product";
 import { Popover } from "@headlessui/react";
-import SortProductsPopover from "./Product/SortProductsPopover";
-import { PageNavigation } from "./PageNavigation";
-import App from "../App/App";
-
+import SortProductsPopover from "../../../../blocks/Frontpage/Product/SortProductsPopover";
+import { PageNavigation } from "../../../../blocks/Frontpage/PageNavigation";
+import App from "../App";
 
 export function QueryStringProvider({ children }: React.PropsWithChildren) {
     const filterParams = useRef<Record<string, string>>({});
@@ -89,7 +83,11 @@ export default function Frontpage() {
                                 <CreateProductDialog
                                     Trigger={({ onClick }) => (
                                         <div
-                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                            className={`
+                                                mixin-button-like
+                                                mixin-button-base
+                                                theme-button-generic-white
+                                            `}
                                             onClick={onClick}
                                         >
                                             <div>Add</div>
@@ -102,7 +100,11 @@ export default function Frontpage() {
                                 <SortProductsPopover
                                     Trigger={({ setReferenceElement }) => (
                                         <Popover.Button
-                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                            className={`
+                                                mixin-button-like
+                                                mixin-button-base
+                                                theme-button-generic-white
+                                            `}
                                             ref={setReferenceElement}
                                         >
                                             <div>Sort</div>
@@ -113,7 +115,11 @@ export default function Frontpage() {
                                 <FilterProductsDialog
                                     Trigger={({ onClick }) => (
                                         <div
-                                            className={`${App.BaseButtonClassNames} bg-gray-100 hover:bg-gray-200`}
+                                            className={`
+                                                mixin-button-like
+                                                mixin-button-base
+                                                theme-button-generic-white
+                                            `}
                                             onClick={onClick}
                                         >
                                             <div>Filter</div>

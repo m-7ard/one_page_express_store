@@ -1,6 +1,5 @@
 import { Popover } from "@headlessui/react";
-import AbstractPopover, { AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
-import { getWhiteSurfaceButtonClassName } from "../App/App";
+import AbstractPopover, { AbstractPopoverTrigger } from "../../../../elements/abstract/AbstractPopover";
 
 const CHOICES = [
     { label: "All Orders", value: "all" },
@@ -15,7 +14,13 @@ export default function Dashboard() {
             <DashboardPopover
                 Trigger={({ setReferenceElement, open }) => (
                     <Popover.Button
-                        className={[getWhiteSurfaceButtonClassName({ active: open }), "w-full"].join(" ")}
+                        className={`
+                            mixin-button-like
+                            mixin-button-base
+                            theme-button-generic-white
+                            ${open === true && 'theme-button-generic-white--active'}
+                            w-full
+                        `}
                         ref={setReferenceElement}
                     >
                         Orders By
@@ -39,7 +44,11 @@ function DashboardPopover({ Trigger }: { Trigger: AbstractPopoverTrigger }) {
                 >
                     {CHOICES.map(({ label, value }) => (
                         <Popover.Button key={value}>
-                            <div className={getWhiteSurfaceButtonClassName({ active: false }).replace("border", "")}>
+                            <div className={`
+                                mixin-button-like
+                                mixin-button-base
+                                theme-item-generic-white
+                            `}>
                                 <div className="whitespace-nowrap">{label}</div>
                             </div>
                         </Popover.Button>

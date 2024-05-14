@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
-import App from "./Frontpage";
+import App from "../../pages/linked/App/Frontpage/Frontpage";
 import { PaginatedQuery, ProductType } from "../../../Types";
 import { UncontrolledGenericListbox } from "../../elements/widgets/GenericListbox/UncontrolledGenericListbox";
 import { useQueryStringContext } from "../../../Context";

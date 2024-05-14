@@ -19,7 +19,7 @@ import { FormErrors } from "./components/forms/GenericForm";
 import { User } from "../../../Types";
 import { useAppContext } from "../../../Context";
 import { createUseContext, useGenericForm } from "../../../utils";
-import App from "../App/App";
+import App from "../linked/App/App";
 
 const [AuthContext, useAuthContext] = createUseContext<{
     user: User;
@@ -61,7 +61,7 @@ const profileRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([loginRoute, registerRoute, profileRoute]);
 
-export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigger, open?: boolean }) {
+export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigger; open?: boolean }) {
     return (
         <AbstractPopover
             Trigger={Trigger}
@@ -94,12 +94,7 @@ UserPopover.Panel = function Panel({
     });
 
     return (
-        <Popover.Panel
-            className="bg-gray-50 text-gray-900 p-4 mt-1 border border-gray-900 w-full max-w-72 shadow"
-            ref={setPopperElement}
-            style={styles.popper}
-            {...attributes.popper}
-        >
+        <Popover.Panel className="generic-panel" ref={setPopperElement} style={styles.popper} {...attributes.popper}>
             {<RouterProvider router={router} />}
         </Popover.Panel>
     );
@@ -134,15 +129,15 @@ function Login() {
     });
 
     return (
-        <UserPopover.Body
-            tag="form"
+        <form
+            className="generic-panel__body"
             onSubmit={(event) => {
                 event.preventDefault();
                 mutation.mutate({ form: event.currentTarget });
             }}
         >
-            <UserPopover.Title text="Login" />
-            <App.Divider />
+            <div className="generic-panel__title">Login</div>
+            <hr className="app__x-divider"></hr>
             <UserPopover.FormError errors={errors} />
             <div className="flex flex-col gap-2">
                 <Fieldset
@@ -164,18 +159,36 @@ function Login() {
                     ]}
                     errors={errors}
                 />
-                <button className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}>
+                <button
+                    className={`
+                        mixin-button-like 
+                        mixin-button-base 
+                        justify-center 
+                        bg-yellow-300 
+                        hover:bg-yellow-400
+                        border
+                        border-gray-900
+                    `}
+                >
                     Login
                 </button>
             </div>
-            <App.Divider />
+            <hr className="app__x-divider"></hr>
             <Link
                 to={"/register"}
-                className={`${App.BaseButtonClassNames} justify-center bg-green-300 hover:bg-green-400`}
+                className={`
+                    mixin-button-like 
+                    mixin-button-base 
+                    justify-center 
+                    bg-green-300 
+                    hover:bg-green-400
+                    border
+                    border-gray-900
+                `}
             >
                 Go to Register
             </Link>
-        </UserPopover.Body>
+        </form>
     );
 }
 
@@ -208,15 +221,15 @@ function Register() {
     });
 
     return (
-        <UserPopover.Body
-            tag="form"
+        <form
+            className="generic-panel__body"
             onSubmit={(event) => {
                 event.preventDefault();
                 mutation.mutate({ form: event.currentTarget });
             }}
         >
-            <UserPopover.Title text="Register" />
-            <App.Divider />
+            <div className="generic-panel__title">Register</div>
+            <hr className="app__x-divider"></hr>
             <UserPopover.FormError errors={errors} />
             <div className="flex flex-col gap-2">
                 <Fieldset
@@ -238,18 +251,36 @@ function Register() {
                     ]}
                     errors={errors}
                 />
-                <button className={`${App.BaseButtonClassNames} justify-center bg-green-300 hover:bg-green-400`}>
+                <button
+                    className={`
+                    mixin-button-like 
+                    mixin-button-base 
+                    justify-center 
+                    bg-green-300 
+                    hover:bg-green-400
+                    border
+                    border-gray-900
+                `}
+                >
                     Register
                 </button>
             </div>
-            <App.Divider />
+            <hr className="app__x-divider"></hr>
             <Link
                 to={"/login"}
-                className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
+                className={`
+                    mixin-button-like 
+                    mixin-button-base 
+                    justify-center 
+                    bg-yellow-300 
+                    hover:bg-yellow-400
+                    border
+                    border-gray-900
+                `}
             >
                 Go to Login
             </Link>
-        </UserPopover.Body>
+        </form>
     );
 }
 
@@ -280,9 +311,9 @@ function Profile() {
     });
 
     return (
-        <UserPopover.Body tag="div">
-            <UserPopover.Title text="Profile" />
-            <App.Divider />
+        <div className="generic-panel__body">
+            <div className="generic-panel__title">Profile</div>
+            <hr className="app__x-divider"></hr>
             <div className="flex flex-row gap-2">
                 <div className="relative w-12 h-12 bg-gray-200 border border-gray-900"></div>
                 <div className="flex flex-col">
@@ -294,7 +325,7 @@ function Profile() {
                 <div className={`text-sm text-gray-900 hover:underline cursor-pointer w-fit`}>Account Settings</div>
                 <div className={`text-sm text-gray-900 hover:underline cursor-pointer w-fit`}>Orders</div>
             </div>
-            <App.Divider />
+            <hr className="app__x-divider"></hr>
             <button
                 className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
                 onClick={() => {
@@ -303,7 +334,7 @@ function Profile() {
             >
                 Logout
             </button>
-        </UserPopover.Body>
+        </div>
     );
 }
 
@@ -318,10 +349,6 @@ UserPopover.Body = <T extends keyof HTMLElementTagNameMap>({
         class: "flex flex-col gap-4",
     });
     return Element;
-};
-
-UserPopover.Title = function Title({ text }: { text: string }) {
-    return <div className="text-lg font-bold">{text}</div>;
 };
 
 UserPopover.FormError = ({ errors }: { errors?: FormErrors }) => {

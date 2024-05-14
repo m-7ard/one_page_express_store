@@ -4,7 +4,7 @@ import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import AbstractPopover, { AbstractPopoverTrigger } from "../../../elements/abstract/AbstractPopover";
 import { PaginatedQuery, ProductType } from "../../../../Types";
-import App from "../../App/App";
+import App from "../../../pages/linked/App/App";
 
 const CHOICES = [
     { label: "Newest", value: "newest" },

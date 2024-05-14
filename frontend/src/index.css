@@ -5,15 +5,37 @@ html {
   font-family: "Roboto", sans-serif;
 }
 
+button:focus {
+  outline: none;
+}
+
 @layer components {
-  .button-like {
+  .mixin-button-like {
     @apply flex items-center leading-none box-content transition-colors cursor-pointer border select-none;
   }
-  .button-base {
+  .mixin-button-base {
     @apply gap-2 px-4 py-2;
   }
+  .theme-button-generic-white {
+    @apply border border-gray-900 text-gray-900;
+  }
+  .theme-button-generic-white:not(.theme-button-generic-white--active) {
+    @apply bg-gray-100 hover:bg-gray-200;
+  }
+  .theme-button-generic-white--active {
+    @apply bg-gray-200;
+  }
+  .theme-item-generic-white {
+    @apply text-gray-900;
+  }
+  .theme-item-generic-white:not(.theme-item-generic-white--active) {
+    @apply bg-gray-100 hover:bg-gray-200;
+  }
+  .theme-item-generic-white--active {
+    @apply bg-gray-200;
+  }
   .header\@app__button {
-    @apply button-like button-base border-[#23231A];
+    @apply mixin-button-like mixin-button-base border-[#23231A];
   }
   .header\@app__button:not(.header\@app__button--active) {
     @apply bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200;
@@ -23,5 +45,17 @@ html {
   }
   .header\@app__button [data-role=text] {
     @apply hidden sm:block;
+  }
+  .generic-panel {
+    @apply p-4 mt-1 bg-gray-50 text-gray-900 border border-gray-900 w-full max-w-72 shadow;
+  }
+  .generic-panel__body {
+    @apply flex flex-col gap-4;
+  }
+  .generic-panel__title {
+    @apply text-lg font-bold;
+  }
+  .app__x-divider {
+    @apply h-0 w-full border-t border-gray-900;
   }
 }/*# sourceMappingURL=index.css.map */

@@ -1,14 +1,17 @@
 import { DocumentTextIcon, ShoppingCartIcon, UserIcon } from "@heroicons/react/24/solid";
 import UserPopover from "../../unlinked/UserPopover";
 import { useQuery } from "@tanstack/react-query";
-import React, { Fragment, useRef } from "react";
 import { AppContext } from "../../../../Context";
-import { CartType, FilterType, PaginatedQuery, ProductType, UserType } from "../../../../Types";
+import { CartType, FilterType, UserType } from "../../../../Types";
 import { Outlet } from "@tanstack/react-router";
 import { Popover } from "@headlessui/react";
 import RouteNavigator from "../../../elements/RouteNavigator";
 import CartPopover from "../../unlinked/CartPopover";
-import { classed } from "@tw-classed/react";
+
+export type UsersUserAPIQuery = {
+    user: UserType;
+    cart: CartType;
+} | null
 
 const rawFilters: { field_name: string; field_value: string }[] = JSON.parse(
     document.getElementById("filters")?.innerText ?? "[]",
@@ -19,11 +22,8 @@ const filters: FilterType[] = rawFilters.map(({ field_name, field_value }) => ({
 }));
 
 export default function App() {
-    const userQuery = useQuery<{
-        user: UserType;
-        cart: CartType;
-    }>({
-        queryKey: ["user_info_collection"],
+    const userAndCartQuery = useQuery<UsersUserAPIQuery>({
+        queryKey: ["user_and_cart"],
         queryFn: async () => {
             const response = await fetch("/api/users/user/");
             if (response.ok) {
@@ -35,11 +35,12 @@ export default function App() {
         },
     });
 
-    if (!userQuery.isSuccess) {
+    if (!userAndCartQuery.isSuccess) {
         return;
     }
 
-    const { user, cart } = userQuery.data;
+    const user = userAndCartQuery.data?.user
+    const cart = userAndCartQuery.data?.cart
 
     return (
         <AppContext.Provider value={{ user, filters, cart }}>

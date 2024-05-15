@@ -1,13 +1,59 @@
-import { ProductType } from "../../../../../../Types";
+import { CartProductType, ProductType } from "../../../../../../Types";
 import EditProductDialog from "../../../../unlinked/EditProductDialog";
 import { ProductContext, useAppContext } from "../../../../../../Context";
 import DeleteProductDialog from "../../../../unlinked/DeleteProductDialog";
-import App from "../../App";
 import InformationDisplayDialog from "../../../../unlinked/ProductInformationDisplayDialog";
+import UserPopover from "../../../../unlinked/UserPopover";
+import { Popover } from "@headlessui/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { UsersUserAPIQuery } from "../../App";
 
 export default function Product(product: ProductType) {
-    const { user } = useAppContext();
-    const { name, price, images, description, kind, specification } = product;
+    const queryClient = useQueryClient();
+    const { user, cart } = useAppContext();
+    const { name, price, images, kind } = product;
+
+    const isInCart =
+        cart != null &&
+        cart.products.find((cartProduct) => {
+            return cartProduct.product.id === product.id;
+        }) != null;
+
+    const addToCartMutation = useMutation({
+        mutationFn: async () => {
+            const response = await fetch(`/api/cart/add_product/${product.id}`, {
+                method: "POST",
+                body: JSON.stringify({
+                    amount: 1
+                }),
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (response.ok) {
+                return await response.json();
+            }
+
+            const errors = await response.json();
+            return Promise.reject(errors);
+        },
+        onSuccess: (data: CartProductType) => {
+            queryClient.setQueryData<UsersUserAPIQuery>(["user_and_cart"], (previous) => {
+                if (previous == null) {
+                    return null;
+                }
+
+                return {
+                    ...previous,
+                    cart: {
+                        ...previous.cart,
+                        products: [...previous.cart.products, data],
+                    },
+                };
+            });
+        },
+    });
 
     return (
         <ProductContext.Provider value={product}>
@@ -25,7 +71,47 @@ export default function Product(product: ProductType) {
                     <div className="text-base text-gray-900 font-medium">{name}</div>
                     <div className="text-sm text-gray-900">{price}$</div>
                 </div>
-                <Product.AddToCartButton />
+                {user == null ? (
+                    <UserPopover
+                        Trigger={({ setReferenceElement, open }) => (
+                            <Popover.Button
+                                ref={setReferenceElement}
+                                className={`
+                                    mixin-button-like
+                                    mixin-button-base
+                                    theme-button-generic-yellow
+                                    ${open && "theme-button-generic-yellow--active"}
+                                    justify-center
+                                `}
+                            >
+                                Add to Cart
+                            </Popover.Button>
+                        )}
+                    />
+                ) : isInCart ? (
+                    <button
+                        className={`
+                            mixin-button-like
+                            mixin-button-base
+                            theme-button-generic-green
+                            justify-center
+                        `}
+                    >
+                        In Cart
+                    </button>
+                ) : (
+                    <button
+                        className={`
+                            mixin-button-like
+                            mixin-button-base
+                            theme-button-generic-yellow
+                            justify-center
+                        `}
+                        onClick={() => addToCartMutation.mutate()}
+                    >
+                        Add to Cart
+                    </button>
+                )}
                 <div>
                     <InformationDisplayDialog
                         Trigger={({ onClick }) => (
@@ -36,9 +122,7 @@ export default function Product(product: ProductType) {
                                 Display Information
                             </div>
                         )}
-                        description={description}
-                        images={images}
-                        specification={specification}
+                        product={product}
                     />
                 </div>
                 {user?.is_admin === true && (
@@ -72,12 +156,4 @@ export default function Product(product: ProductType) {
             </div>
         </ProductContext.Provider>
     );
-}
-
-Product.AddToCartButton = function AddToCard () {
-    return (
-        <div className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400 border-gray-900`}>
-            Add to Cart
-        </div>
-    )
 }

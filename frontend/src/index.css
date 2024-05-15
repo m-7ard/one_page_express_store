@@ -11,10 +11,10 @@ button:focus {
 
 @layer components {
   .mixin-button-like {
-    @apply flex items-center leading-none box-content transition-colors cursor-pointer border select-none;
+    @apply flex items-center box-border transition-colors cursor-pointer select-none;
   }
   .mixin-button-sm {
-    @apply gap-0.5 px-1 py-0.5 text-xs;
+    @apply gap-0.5 px-1 py-0.5 text-xs leading-none;
   }
   .mixin-button-base {
     @apply gap-2 px-4 py-1 text-base;
@@ -37,17 +37,35 @@ button:focus {
   .theme-button-generic-yellow--active {
     @apply bg-yellow-400;
   }
-  .theme-item-generic-white {
-    @apply text-gray-900;
+  .theme-button-generic-green {
+    @apply border border-gray-900 text-gray-900;
   }
-  .theme-item-generic-white:not(.theme-item-generic-white--active) {
+  .theme-button-generic-green:not(.theme-button-generic-green--active) {
+    @apply bg-green-300 hover:bg-green-400;
+  }
+  .theme-button-generic-green--active {
+    @apply bg-green-400;
+  }
+  .theme-group-listbox-generic-white__button {
+    @apply mixin-button-like theme-button-generic-white;
+  }
+  .theme-group-listbox-generic-white__menu {
+    @apply border border-gray-900 bg-gray-100;
+  }
+  .theme-group-listbox-generic-white__item {
+    @apply mixin-button-like text-gray-900;
+  }
+  .theme-group-listbox-generic-white__item:not(.theme-group-listbox-generic-white__item--active) {
     @apply bg-gray-100 hover:bg-gray-200;
   }
-  .theme-item-generic-white--active {
+  .theme-group-listbox-generic-white__item--active {
     @apply bg-gray-200;
   }
+  .theme-group-listbox-generic-white__item:not(:last-child) {
+    @apply border-b border-gray-900;
+  }
   .header\@app__button {
-    @apply mixin-button-like mixin-button-base border-[#23231A];
+    @apply mixin-button-like mixin-button-base border border-[#23231A];
   }
   .header\@app__button:not(.header\@app__button--active) {
     @apply bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200;
@@ -59,7 +77,7 @@ button:focus {
     @apply hidden sm:block;
   }
   .generic-panel {
-    @apply p-4 mt-1 bg-gray-50 text-gray-900 border border-gray-900 w-full max-w-72 shadow;
+    @apply p-4 bg-gray-50 text-gray-900 border border-gray-900 w-full max-w-72 shadow;
   }
   .generic-panel__body {
     @apply flex flex-col gap-4;

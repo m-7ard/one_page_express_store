@@ -1,8 +1,8 @@
 import { useQueryClient } from "@tanstack/react-query";
-import App from "../../pages/linked/App/Frontpage/Frontpage";
-import { PaginatedQuery, ProductType } from "../../../Types";
-import { UncontrolledGenericListbox } from "../../elements/widgets/GenericListbox/UncontrolledGenericListbox";
-import { useQueryStringContext } from "../../../Context";
+import App from "../Frontpage";
+import { PaginatedQuery, ProductType } from "../../../../../../Types";
+import { UncontrolledGenericListbox } from "../../../../../elements/widgets/GenericListbox/UncontrolledGenericListbox";
+import { useQueryStringContext } from "../../../../../../Context";
 
 export function PageNavigation() {
     const { page_index } = useQueryStringContext();
@@ -12,12 +12,12 @@ export function PageNavigation() {
     return (
         <div className="flex gap-2 justify-between items-center">
             <div
-                className={[
-                    ...["text-base select-none", App.BaseButtonClassNames],
-                    ...(productsQuery.previousPage == null
-                        ? ["bg-gray-200 text-gray-600 border-gray-600"]
-                        : ["hover:underline cursor-pointer"]),
-                ].join(" ")}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-white
+                    ${productsQuery.previousPage == null && 'contrast-75 cursor-not-allowed'}
+                `}
                 onClick={() => {
                     if (productsQuery.previousPage == null) {
                         return;
@@ -50,12 +50,12 @@ export function PageNavigation() {
                 />
             </div>
             <div
-                className={[
-                    ...["text-base select-none", App.BaseButtonClassNames],
-                    ...(productsQuery.nextPage == null
-                        ? ["bg-gray-200 text-gray-600 border-gray-600"]
-                        : ["hover:underline cursor-pointer"]),
-                ].join(" ")}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-white
+                    ${productsQuery.nextPage == null && 'contrast-75 cursor-not-allowed'}
+                `}
                 onClick={() => {
                     if (productsQuery.nextPage == null) {
                         return;

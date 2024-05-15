@@ -48,9 +48,10 @@ testCase(async () => {
             headers: {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
+                "Content-Type": "application/json",
             },
-            body: objectToFormData({
-                amount: "1",
+            body: JSON.stringify({
+                amount: 1,
             }),
         });
 
@@ -69,9 +70,10 @@ testCase(async () => {
             headers: {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
+                "Content-Type": "application/json",
             },
-            body: objectToFormData({
-                amount: "1",
+            body: JSON.stringify({
+                amount: 1,
             }),
         });
 
@@ -208,6 +210,7 @@ testCase(async () => {
                 method: "POST",
                 headers: {
                     Origin: env.ORIGIN as string,
+                    "Content-Type": "application/json",
                 },
             },
         );

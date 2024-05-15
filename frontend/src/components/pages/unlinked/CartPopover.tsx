@@ -1,9 +1,8 @@
-import AbstractPopover, {
-    AbstractPopoverPanel,
-    AbstractPopoverTrigger,
-} from "../../elements/abstract/AbstractPopover";
+import AbstractPopover, { AbstractPopoverPanel, AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
 import { Popover } from "@headlessui/react";
 import React from "react";
+import { useAppContext } from "../../../Context";
+import { CartProductType, ProductType } from "../../../Types";
 
 export default function CartPopover({ Trigger }: { Trigger: AbstractPopoverTrigger; open?: boolean }) {
     return (
@@ -30,6 +29,12 @@ CartPopover.Panel = function CartPopover({
     setPopperElement,
     popper: { styles, attributes },
 }: React.ComponentProps<AbstractPopoverPanel>) {
+    const { cart } = useAppContext();
+
+    if (cart == null) {
+        return;
+    }
+
     return (
         <Popover.Panel
             ref={setPopperElement}
@@ -42,15 +47,12 @@ CartPopover.Panel = function CartPopover({
                 <div className="generic-panel__title">Cart</div>
                 <hr className="app__x-divider"></hr>
                 <div className="flex flex-col gap-2 max-h-96 overflow-auto pr-1">
-                    <CartItem />
-                    <hr className="app__x-divider"></hr>
-                    <CartItem />
-                    <hr className="app__x-divider"></hr>
-                    <CartItem />
-                    <hr className="app__x-divider"></hr>
-                    <CartItem />
-                    <hr className="app__x-divider"></hr>
-                    <CartItem />
+                    {cart.products.map((cartProduct, i) => (
+                        <>
+                            <CartItem key={cartProduct.id} cartProduct={cartProduct} />
+                            {i !== cart.products.length - 1 && <hr className="app__x-divider"></hr>}
+                        </>
+                    ))}
                 </div>
                 <hr className="app__x-divider"></hr>
                 <div>
@@ -79,13 +81,15 @@ CartPopover.Panel = function CartPopover({
     );
 };
 
-function CartItem() {
+function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
+    const { product, amount } = cartProduct;
+
     return (
         <div className="flex flex-col gap-2">
             <div className="grid grid-cols-12 gap-2 w-full text-gray-900">
                 <div className="bg-gray-600 col-span-4 relative border border-gray-900">
                     <img
-                        src={`/media/fu5EDWLd-Ptugaj0ZZ3xb-_11ba88d8-c33b-49be-8201-d7d5a91d3e0b.jpg`}
+                        src={`/media/${product.images[0]}`}
                         className="absolute w-full h-full"
                         style={{ objectFit: "cover" }}
                         alt="prop"
@@ -93,7 +97,7 @@ function CartItem() {
                 </div>
                 <div className="flex flex-col col-span-8 gap-2">
                     <div className="text-base leading-none line-clamp-2 font-medium">
-                        Some Cart Item Let's say Some Cart Item Let's say
+                        {product.name}
                     </div>
                     <div className="flex flex-col gap-0.5">
                         <div
@@ -132,11 +136,11 @@ function CartItem() {
             <div className="flex flex-row justify-between">
                 <div className="flex flex-row gap-2 items-center">
                     <div className="text-sm">In Cart</div>
-                    <input type="checkbox" />
+                    <input type="checkbox" defaultChecked />
                 </div>
                 <div className="flex flex-row gap-2 justify-end">
-                    <div className="text-sm font-gray-600">x2</div>
-                    <div className="text-sm font-medium">$129.00</div>
+                    <div className="text-sm font-gray-600">x{amount}</div>
+                    <div className="text-sm font-medium">{product.price}</div>
                 </div>
             </div>
         </div>

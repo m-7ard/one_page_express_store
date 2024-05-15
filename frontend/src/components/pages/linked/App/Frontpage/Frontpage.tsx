@@ -8,7 +8,7 @@ import CreateProductDialog from "../../../unlinked/CreateProductDialog";
 import Product from "./Product/Product";
 import { Popover } from "@headlessui/react";
 import SortProductsPopover from "../../../../blocks/Frontpage/Product/SortProductsPopover";
-import { PageNavigation } from "../../../../blocks/Frontpage/PageNavigation";
+import { PageNavigation } from "./PageNavigation/PageNavigation";
 import App from "../App";
 
 export function QueryStringProvider({ children }: React.PropsWithChildren) {

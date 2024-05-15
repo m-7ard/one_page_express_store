@@ -23,10 +23,21 @@ const add_product = routeWithErrorHandling(async (request: Request, response: Re
         return;
     }
 
-    return await dbOperationWithRollback(async (connection) => {
+    await dbOperationWithRollback(async (connection) => {
         const cart = await mysqlGetOrThrow<DatabaseCart>(
             connection.execute("SELECT * FROM cart WHERE user_id = ?", [user.id]),
         );
+
+        const existingCartProduct = await mysqlGetOrNull<DatabaseCartProduct>(
+            connection.execute(`SELECT * FROM cart_product WHERE cart_id = ? AND product_id = ?`, [
+                cart.id,
+                request.params.id,
+            ]),
+        );
+
+        if (existingCartProduct != null) {
+            return response.status(200).json(await cartProductSerializer.parseAsync(existingCartProduct));
+        }
 
         const validation = await cartProductSchema.safeParseAsync({
             cart_id: cart.id,

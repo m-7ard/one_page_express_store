@@ -76,6 +76,12 @@ export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigg
                             altAxis: true,
                         },
                     },
+                    {
+                        name: 'offset',
+                        options: {
+                          offset: [0, 4],
+                        },
+                      },
                 ],
             }}
         />
@@ -86,8 +92,7 @@ UserPopover.Panel = function Panel({
     setPopperElement,
     popper: { styles, attributes },
 }: React.ComponentProps<AbstractPopoverPanel>) {
-    const queryClient = useQueryClient();
-    const user = queryClient.getQueryData<UserType>(["user"]);
+    const { user } = useAppContext();
     const router = createRouter({
         routeTree,
         history: createMemoryHistory({ initialEntries: [user == null ? "/login" : "/profile"] }),
@@ -123,7 +128,7 @@ function Login() {
             return Promise.reject(errors);
         },
         onSuccess: (data) => {
-            queryClient.setQueriesData({ queryKey: ["user"] }, () => data);
+            queryClient.setQueriesData({ queryKey: ["user_and_cart"] }, () => data);
             navigate({ to: "/profile" });
         },
     });
@@ -161,13 +166,10 @@ function Login() {
                 />
                 <button
                     className={`
-                        mixin-button-like 
-                        mixin-button-base 
-                        justify-center 
-                        bg-yellow-300 
-                        hover:bg-yellow-400
-                        border
-                        border-gray-900
+                        mixin-button-like
+                        mixin-button-base
+                        theme-button-generic-yellow
+                        justify-center
                     `}
                 >
                     Login
@@ -177,13 +179,10 @@ function Login() {
             <Link
                 to={"/register"}
                 className={`
-                    mixin-button-like 
-                    mixin-button-base 
-                    justify-center 
-                    bg-green-300 
-                    hover:bg-green-400
-                    border
-                    border-gray-900
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-green
+                    justify-center
                 `}
             >
                 Go to Register
@@ -253,14 +252,11 @@ function Register() {
                 />
                 <button
                     className={`
-                    mixin-button-like 
-                    mixin-button-base 
-                    justify-center 
-                    bg-green-300 
-                    hover:bg-green-400
-                    border
-                    border-gray-900
-                `}
+                        mixin-button-like
+                        mixin-button-base
+                        theme-button-generic-green
+                        justify-center
+                    `}
                 >
                     Register
                 </button>
@@ -269,13 +265,10 @@ function Register() {
             <Link
                 to={"/login"}
                 className={`
-                    mixin-button-like 
-                    mixin-button-base 
-                    justify-center 
-                    bg-yellow-300 
-                    hover:bg-yellow-400
-                    border
-                    border-gray-900
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center
                 `}
             >
                 Go to Login
@@ -302,7 +295,7 @@ function Profile() {
         onSuccess: () => {
             queryClient.setQueriesData(
                 {
-                    queryKey: ["user_info_collection"],
+                    queryKey: ["user_and_cart"],
                 },
                 () => null,
             );
@@ -327,7 +320,12 @@ function Profile() {
             </div>
             <hr className="app__x-divider"></hr>
             <button
-                className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center
+                `}
                 onClick={() => {
                     mutation.mutate();
                 }}

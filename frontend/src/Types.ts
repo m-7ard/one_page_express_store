@@ -6,7 +6,7 @@ export interface UserType {
 
 export interface CartType {
     id: number;
-    products: ProductType[];
+    products: CartProductType[];
     user_id: UserType['id'];
 }
 
@@ -23,6 +23,12 @@ export interface ProductType {
     kind: string;
     specification: Array<[fieldName: string, fieldValue: string]>;
     images: string[];
+}
+
+export interface CartProductType {
+    id: number;
+    amount: number;
+    product: ProductType;
 }
 
 export interface PaginatedQuery<T> {

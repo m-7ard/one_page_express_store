@@ -31,7 +31,7 @@ export default function AbstractPopover({
     const popper = usePopper(referenceElement, popperElement, options);
 
     return (
-        <Popover className={"z-50"}>
+        <Popover className={"z-50 flex flex-col"}>
             {({ open }) => (
                 <>
                     <Trigger setReferenceElement={setReferenceElement} open={open} />

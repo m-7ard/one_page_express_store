@@ -6,10 +6,12 @@ import { ProductType } from "../../../Types";
 
 export default function InformationDisplayDialog({
     Trigger,
-    description,
-    images,
-    specification,
-}: { Trigger: AbstractDialogTrigger } & Pick<ProductType, "description" | "images" | "specification">) {
+    product,
+}: {
+    Trigger: AbstractDialogTrigger;
+    product: ProductType;
+}) {
+    const { description, images, specification } = product;
     const columns = specification.reduce<{
         leftCol: [string, string][];
         rightCol: [string, string][];

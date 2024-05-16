@@ -16,11 +16,35 @@ button:focus {
     }
 
     .mixin-button-sm {
-        @apply gap-0.5 px-1 py-0.5 text-xs leading-none;
+        @apply gap-0.5 px-2 py-1 text-sm leading-none;
     }
 
     .mixin-button-base {
         @apply gap-2 px-4 py-1 text-base;
+    }
+
+    .mixin-char-input-like {
+        @apply after:content-['.'] relative;
+
+        > input {
+            @apply absolute inset-0 transition-colors;
+        }
+    }
+
+    .mixin-char-input-sm {
+        @apply mixin-button-sm;
+
+        > input {
+            @apply mixin-button-sm absolute inset-0 transition-colors;
+        }
+    }
+
+    .theme-input-generic-white {
+        @apply border border-gray-900 flex flex-grow;
+
+        > input {
+            @apply text-gray-900 bg-gray-100 focus:bg-gray-200;
+        }
     }
 
     .theme-button-generic-white {
@@ -90,6 +114,8 @@ button:focus {
         }
 
     }
+
+    
 
     .header\@app__button {
         @apply mixin-button-like mixin-button-base border border-[#23231A];

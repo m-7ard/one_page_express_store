@@ -2,7 +2,7 @@ import { CartProductType, ProductType } from "../../../../../../Types";
 import EditProductDialog from "../../../../unlinked/EditProductDialog";
 import { ProductContext, useAppContext } from "../../../../../../Context";
 import DeleteProductDialog from "../../../../unlinked/DeleteProductDialog";
-import InformationDisplayDialog from "../../../../unlinked/ProductInformationDisplayDialog";
+import ProductInformationDisplayDialog from "../../../../unlinked/ProductInformationDisplayDialog";
 import UserPopover from "../../../../unlinked/UserPopover";
 import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -113,7 +113,7 @@ export default function Product(product: ProductType) {
                     </button>
                 )}
                 <div>
-                    <InformationDisplayDialog
+                    <ProductInformationDisplayDialog
                         Trigger={({ onClick }) => (
                             <div
                                 className="text-xs text-gray-900 hover:underline cursor-pointer w-fit"

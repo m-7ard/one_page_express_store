@@ -1,6 +1,8 @@
 import { createContext, useContext } from "react";
-import { CartType, FilterType, ProductType, UserType } from "./Types";
+import { CartProductType, CartType, FilterType, ProductType, UserType } from "./Types";
 import { createUseContext } from "./utils";
+import { apiFetchBodyDataUnit } from "./components/pages/unlinked/CartPopover";
+import { FormErrors } from "./components/elements/forms/GenericForm";
 
 interface AppContextInterface {
     user?: UserType;
@@ -31,4 +33,11 @@ export const [QueryStringContext, useQueryStringContext] = createUseContext<{
     buildQueryString: () => string;
 }>("useQueryStringContext has to be used within <QueryStringContext.Provider>");
 
-export const [ProductContext, useProductContext] = createUseContext<ProductType>("useProductContext has to be used within <ProductContext.Provider>");
+export const [ProductContext, useProductContext] = createUseContext<ProductType>(
+    "useProductContext has to be used within <ProductContext.Provider>",
+);
+
+export const [UserCartContext, useUserCartContext] = createUseContext<{
+    updateCartProductsUpdateData: ({ id, amount }: apiFetchBodyDataUnit) => void;
+    errors: FormErrors | undefined;
+}>("useUserCartContext has to be used within <UserCartContext.Provider>");

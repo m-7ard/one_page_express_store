@@ -11,8 +11,8 @@ import {
     useNavigate,
     useRouterState,
 } from "@tanstack/react-router";
-import { PlusIcon, XMarkIcon } from "@heroicons/react/24/solid";
-import AbstractDialog, { AbstractDialogPanel, AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
+import { XMarkIcon } from "@heroicons/react/24/solid";
+import AbstractDialog, { AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
 import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldWidget";
 import LazyFormImageUploadWidget from "../../elements/forms/widgets/LazyFormImageUpload";
@@ -21,14 +21,11 @@ import { FormTextAreaWidget } from "../../elements/forms/widgets/FormTextAreaWid
 import { useGenericForm } from "../../../utils";
 import Fieldset from "../../elements/forms/Fieldset";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ProductType } from "../../../Types";
 import { useAbstractDialogContext } from "../../../Context";
 import App from "../linked/App/App";
-
-const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
-const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];
-const MAX_IMAGES_LENGTH = 100;
+import { PRODUCT } from "../../../constants";
 
 const rootRoute = createRootRoute({
     component: () => <Outlet />,
@@ -49,19 +46,16 @@ const successRoute = createRoute({
 const routeTree = rootRoute.addChildren([formRoute, successRoute]);
 
 export default function CreateProductDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
-    return (
-        <AbstractDialog
-            Trigger={Trigger}
-            Panel={CreateProductDialog.Panel}
-        />
-    );
+    return <AbstractDialog Trigger={Trigger} Panel={CreateProductDialog.Panel} />;
 }
 
-CreateProductDialog.Panel = function Panel ({ onClose }: { onClose: () => void }) {
-    const router = useRef(createRouter({
-        routeTree,
-        history: createMemoryHistory({ initialEntries: ["/"] }),
-    }));
+CreateProductDialog.Panel = function Panel({ onClose }: { onClose: () => void }) {
+    const router = useRef(
+        createRouter({
+            routeTree,
+            history: createMemoryHistory({ initialEntries: ["/"] }),
+        }),
+    );
 
     return (
         <Dialog.Panel className="m-auto p-4 max-w-prose w-full max-h-full overflow-hidden bg-yellow-50 relative text-gray-900  border border-gray-900 shadow">
@@ -71,7 +65,7 @@ CreateProductDialog.Panel = function Panel ({ onClose }: { onClose: () => void }
             {<RouterProvider router={router.current} />}
         </Dialog.Panel>
     );
-} 
+};
 
 function CreateProductForm() {
     const queryClient = useQueryClient();
@@ -115,7 +109,7 @@ function CreateProductForm() {
             }}
         >
             <div className="text-xl font-bold">Create Product</div>
-            <App.Divider />
+            <hr className="app__x-divider"></hr>
             <div className="flex flex-col gap-4 h-full overflow-auto max-h-96">
                 <Fieldset
                     errors={errors}
@@ -150,15 +144,15 @@ function CreateProductForm() {
                             name: "images",
                             label: "Images",
                             widget: LazyFormImageUploadWidget({
-                                maxFileSize: MAX_IMAGE_SIZE,
-                                maxFileLength: MAX_IMAGES_LENGTH,
-                                acceptedFormats: ACCEPTED_FILE_FORMATS,
-                                onChange: (value) => {
+                                maxFileSize: PRODUCT.MAX_IMAGE_SIZE,
+                                maxFileLength: PRODUCT.MAX_IMAGES_LENGTH,
+                                acceptedFormats: PRODUCT.ACCEPTED_FILE_FORMATS,
+                                onChange: useCallback((value: Array<string | File>) => {
                                     setImages(value);
-                                },
+                                }, []),
                             }),
                             optional: true,
-                            helperText: `Accepted formats: ${ACCEPTED_FILE_FORMATS.map((format) => format.split("/")[1]).join(", ")}; Max file size: ${MAX_IMAGE_SIZE / 1024 ** 2}MB; Max ${MAX_IMAGES_LENGTH} Images;`,
+                            helperText: `Accepted formats: ${PRODUCT.ACCEPTED_FILE_FORMATS.map((format) => format.split("/")[1]).join(", ")}; Max file size: ${PRODUCT.MAX_IMAGE_SIZE / 1024 ** 2}MB; Max ${PRODUCT.MAX_IMAGES_LENGTH} Images;`,
                         },
                         {
                             name: "specification",
@@ -168,8 +162,18 @@ function CreateProductForm() {
                     ]}
                 />
             </div>
-            <App.Divider />
-            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>Create</button>
+            <hr className="app__x-divider"></hr>
+            <button
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center   
+                    ml-auto 
+                `}
+            >
+                Create
+            </button>
         </form>
     );
 }
@@ -187,15 +191,25 @@ function Success() {
     return (
         <div className="flex flex-col gap-4">
             <div className="w-full text-center">Successfully Created "{product.name}"</div>
-            <App.Divider />
+            <hr className="app__x-divider"></hr>
             <Link
                 to={"/"}
-                className={["bg-yellow-300 hover:bg-yellow-400", "justify-center", App.BaseButtonClassNames].join(" ")}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center    
+                `}
             >
                 Create Another
             </Link>
             <div
-                className={["bg-gray-300 hover:bg-gray-400", "justify-center", App.BaseButtonClassNames].join(" ")}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-white
+                    justify-center    
+                `}
                 onClick={() => setOpen(false)}
             >
                 Close

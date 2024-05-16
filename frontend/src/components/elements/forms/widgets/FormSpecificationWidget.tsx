@@ -38,7 +38,12 @@ function SpecificationInput({
                 <SpecificationInputField initial={tuple} setValue={setValue} ID={ID} key={ID} />
             ))}
             <div
-                className={`${App.BaseButtonClassNames} justify-center bg-yellow-300 hover:bg-yellow-400`}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center    
+                `}
                 onClick={() => {
                     setValue((previous) => ({ ...previous, [getIncrementalID()]: ["", ""] }));
                 }}

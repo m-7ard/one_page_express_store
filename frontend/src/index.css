@@ -14,10 +14,28 @@ button:focus {
     @apply flex items-center box-border transition-colors cursor-pointer select-none;
   }
   .mixin-button-sm {
-    @apply gap-0.5 px-1 py-0.5 text-xs leading-none;
+    @apply gap-0.5 px-2 py-1 text-sm leading-none;
   }
   .mixin-button-base {
     @apply gap-2 px-4 py-1 text-base;
+  }
+  .mixin-char-input-like {
+    @apply after:content-["."] relative;
+  }
+  .mixin-char-input-like > input {
+    @apply absolute inset-0 transition-colors;
+  }
+  .mixin-char-input-sm {
+    @apply mixin-button-sm;
+  }
+  .mixin-char-input-sm > input {
+    @apply mixin-button-sm absolute inset-0 transition-colors;
+  }
+  .theme-input-generic-white {
+    @apply border border-gray-900 flex flex-grow;
+  }
+  .theme-input-generic-white > input {
+    @apply text-gray-900 bg-gray-100 focus:bg-gray-200;
   }
   .theme-button-generic-white {
     @apply border border-gray-900 text-gray-900;

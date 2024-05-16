@@ -32,7 +32,7 @@ export default function AbstractDialog({
                     setOpen(!open);
                 }}
             />
-            <Dialog open={open} onClose={() => setOpen(false)} className="relative z-50">
+            <Dialog open={open} onClose={() => setOpen(false)} className="relative" style={{ zIndex: 5000 }}>
                 <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
                 <div className="fixed inset-0 flex">
                     <Panel onClose={() => setOpen(false)} />

@@ -1,7 +1,7 @@
 import { AdjustmentsHorizontalIcon, ArrowDownIcon, ChevronUpDownIcon, PlusIcon } from "@heroicons/react/24/solid";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useCallback, useRef } from "react";
-import { QueryStringContext, useQueryStringContext } from "../../../../../Context";
+import { QueryStringContext, useAppContext, useQueryStringContext } from "../../../../../Context";
 import { PaginatedQuery, ProductType, UserType } from "../../../../../Types";
 import FilterProductsDialog from "../../../unlinked/FilterProductsDialog";
 import CreateProductDialog from "../../../unlinked/CreateProductDialog";
@@ -48,7 +48,7 @@ export default function Frontpage() {
         },
     });
 
-    const user = queryClient.getQueryData<UserType>(["user"]);
+    const { user } = useAppContext();
 
     return (
         productsQuery.isSuccess && (

@@ -353,13 +353,13 @@ UserPopover.FormError = ({ errors }: { errors?: FormErrors }) => {
     return (
         errors?.formErrors != null &&
         errors?.formErrors.length !== 0 && (
-            <div className="bg-red-400 w-full p-2 flex flex-col gap-2">
-                <div className="text-sm font-semibold text-white leading-none">Form</div>
+            <div className="border border-red-400 w-full py-2 px-4 flex flex-col gap-2">
+                <div className="text-sm font-medium text-gray-900 leading-none">Form</div>
                 <div className="flex flex-col gap-1">
                     {errors.formErrors.map((message, i) => (
-                        <div className="text-sm text-white leading-none flex items-center gap-2" key={i}>
+                        <div className="text-sm text-gray-900 leading-none flex items-center gap-2" key={i}>
                             <div>•</div>
-                            <div className="underline">{message}</div>
+                            <div>{message}</div>
                         </div>
                     ))}
                 </div>

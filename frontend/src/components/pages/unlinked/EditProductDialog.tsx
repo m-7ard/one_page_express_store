@@ -23,11 +23,7 @@ import { useCallback, useRef, useState } from "react";
 import { ProductType } from "../../../Types";
 import { useAbstractDialogContext, useProductContext } from "../../../Context";
 import { SpecificationInputWidget } from "../../elements/forms/widgets/FormSpecificationWidget";
-import App from "../linked/App/App";
-
-const MAX_IMAGE_SIZE = 1024 ** 2 * 12;
-const ACCEPTED_FILE_FORMATS = ["image/jpeg", "image/png"];
-const MAX_IMAGES_LENGTH = 100;
+import { PRODUCT } from "../../../constants";
 
 const rootRoute = createRootRoute({
     component: () => <Outlet />,
@@ -157,16 +153,16 @@ function EditProductForm() {
                             name: "images",
                             label: "Images",
                             widget: LazyFormImageUploadWidget({
-                                maxFileSize: MAX_IMAGE_SIZE,
-                                maxFileLength: MAX_IMAGES_LENGTH,
-                                acceptedFormats: ACCEPTED_FILE_FORMATS,
+                                maxFileSize: PRODUCT.MAX_IMAGE_SIZE,
+                                maxFileLength: PRODUCT.MAX_IMAGES_LENGTH,
+                                acceptedFormats: PRODUCT.ACCEPTED_FILE_FORMATS,
                                 onChange: useCallback((value: Array<string | File>) => {
                                     setImages(value);
                                 }, []),
                                 initial: product.images,
                             }),
                             optional: true,
-                            helperText: `Accepted formats: ${ACCEPTED_FILE_FORMATS.map((format) => format.split("/")[1]).join(", ")}; Max file size: ${MAX_IMAGE_SIZE / 1024 ** 2}MB; Max ${MAX_IMAGES_LENGTH} Images;`,
+                            helperText: `Accepted formats: ${PRODUCT.ACCEPTED_FILE_FORMATS.map((format) => format.split("/")[1]).join(", ")}; Max file size: ${PRODUCT.MAX_IMAGE_SIZE / 1024 ** 2}MB; Max ${PRODUCT.MAX_IMAGES_LENGTH} Images;`,
                         },
                         {
                             name: "specification",
@@ -179,7 +175,15 @@ function EditProductForm() {
                 />
             </div>
             <hr className="h-0 w-full border-b-px border-gray-900"></hr>
-            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`}>
+            <button
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center
+                    ml-auto  
+                `}
+            >
                 Edit
             </button>
         </form>
@@ -200,7 +204,12 @@ function Success() {
         <div className="flex flex-col gap-4">
             <div className="w-full text-center">Successfully Edited "{product.name}"</div>
             <div
-                className={`justify-center ${App.BaseButtonClassNames} bg-gray-300 hover:bg-gray-400`}
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-white
+                    justify-center    
+                `}
                 onClick={() => setOpen(false)}
             >
                 Close

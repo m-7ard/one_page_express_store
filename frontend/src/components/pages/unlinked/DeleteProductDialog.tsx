@@ -107,12 +107,20 @@ function DeleteProductForm() {
             setErrors={setErrors}
         >
             <div className="text-xl font-bold">Delete Product</div>
-            <App.Divider />
+            <hr className="app__x-divider"></hr>
             <div className="flex flex-col gap-4 h-full overflow-auto max-h-96">
                 <div className="text-sm">Are you sure you want to delete "{product.name}"?</div>
             </div>
-            <App.Divider />
-            <button className={`ml-auto ${App.BaseButtonClassNames} bg-yellow-300 hover:bg-yellow-400`} type="submit">
+            <hr className="app__x-divider"></hr>
+            <button
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-yellow
+                    justify-center   
+                    ml-auto 
+                `}
+            >
                 Confirm
             </button>
         </GenericForm>
@@ -132,12 +140,17 @@ function Success() {
     return (
         <div className="flex flex-col gap-4">
             <div className="w-full text-center">Successfully Deleted "{product.name}"</div>
-            <div
-                className={`justify-center ${App.BaseButtonClassNames} bg-gray-300 hover:bg-gray-400`}
+            <button
+                className={`
+                    mixin-button-like
+                    mixin-button-base
+                    theme-button-generic-white
+                    justify-center   
+                `}
                 onClick={() => setOpen(false)}
             >
                 Close
-            </div>
+            </button>
         </div>
     );
 }

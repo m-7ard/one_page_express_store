@@ -4,7 +4,7 @@ import { ChevronLeftIcon, ChevronRightIcon, XMarkIcon } from "@heroicons/react/2
 import AbstractDialog, { AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
 import { ProductType } from "../../../Types";
 
-export default function InformationDisplayDialog({
+export default function ProductInformationDisplayDialog ({
     Trigger,
     product,
 }: {
@@ -40,13 +40,13 @@ export default function InformationDisplayDialog({
                             </div>
                         </div>
                         <hr className="h-0 w-full border-b-px border-gray-900"></hr>
-                        <InformationDisplayDialog.ImageGallery images={images} />
+                        <ProductInformationDisplayDialog.ImageGallery images={images} />
                         <hr className="h-0 w-full border-b-px border-gray-900"></hr>
                         <div className="text-sm break-all">{description}</div>
                         <hr className="h-0 w-full border-b-px border-gray-900"></hr>
                         <div className="flex gap-4">
-                            <InformationDisplayDialog.SpecificationColumn entries={columns.leftCol} />
-                            <InformationDisplayDialog.SpecificationColumn entries={columns.rightCol} />
+                            <ProductInformationDisplayDialog.SpecificationColumn entries={columns.leftCol} />
+                            <ProductInformationDisplayDialog.SpecificationColumn entries={columns.rightCol} />
                         </div>
                     </div>
                 </Dialog.Panel>
@@ -55,7 +55,7 @@ export default function InformationDisplayDialog({
     );
 }
 
-InformationDisplayDialog.SpecificationColumn = ({ entries }: { entries: [string, string][] }) => (
+ProductInformationDisplayDialog.SpecificationColumn = ({ entries }: { entries: [string, string][] }) => (
     <div className="flex flex-col shrink-0 basis-0 grow overflow-hidden">
         <div className="w-full">
             {entries.map(([fieldName, fieldValue]) => (
@@ -68,7 +68,7 @@ InformationDisplayDialog.SpecificationColumn = ({ entries }: { entries: [string,
     </div>
 );
 
-InformationDisplayDialog.ImageGallery = function ImageGallery({ images }: Pick<ProductType, "images">) {
+ProductInformationDisplayDialog.ImageGallery = function ImageGallery({ images }: Pick<ProductType, "images">) {
     const [counter, setCounter] = useState(0);
 
     return (

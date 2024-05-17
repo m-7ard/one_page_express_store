@@ -97,27 +97,9 @@ testCase(async () => {
     }, "List Cart Products");
 
     await test(async () => {
-        const { cart } = await ADMIN_1_CART_MIXN();
-        const response = await fetch(
-            `http://localhost:3001/api/cart/remove_product/${products.ADMIN_2__PRODUCT_1.id}`,
-            {
-                method: "POST",
-                headers: {
-                    Origin: env.ORIGIN as string,
-                    Cookie: ADMIN_1_COOKIE,
-                },
-            },
-        );
-
-        assert.strictEqual(response.status, 200);
-        const newCartData = await cartSerializer.parseAsync(cart);
-        assert.strictEqual(newCartData.products.length, 1);
-    }, "Remove Cart Product");
-
-    await test(async () => {
         const { cart, cartProducts, EXPECTED_CART_PRODUCTS_COUNT } = await ADMIN_1_CART_MIXN();
         const response = await fetch(
-            `http://localhost:3001/api/cart/remove_product/${products.ADMIN_2__PRODUCT_1.id}`,
+            `http://localhost:3001/api/cart/remove_product/${cartProducts.ADMIN_2__PRODUCT_1.id}`,
             {
                 method: "POST",
                 headers: {

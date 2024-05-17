@@ -39,5 +39,6 @@ export const [ProductContext, useProductContext] = createUseContext<ProductType>
 
 export const [UserCartContext, useUserCartContext] = createUseContext<{
     updateCartProductsUpdateData: ({ id, amount }: apiFetchBodyDataUnit) => void;
-    errors: FormErrors | undefined;
+    errors: Record<number, FormErrors> | undefined;
+    setCartProductUpdate: React.Dispatch<React.SetStateAction<apiFetchBodyDataUnit[]>>;
 }>("useUserCartContext has to be used within <UserCartContext.Provider>");

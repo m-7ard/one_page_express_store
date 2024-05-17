@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
 import { DatabaseCartProduct } from "../../backend/database_types.js";
 import { cartProductSchema } from "../../backend/schemas.js";
-import {
-    dbOperationWithRollback,
-    mysqlGetQuery,
-    routeWithErrorHandling,
-} from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlGetQuery, routeWithErrorHandling } from "../../backend/utils.js";
 import { CartProduct } from "../../backend/managers.js";
 import { z } from "zod";
 
@@ -30,26 +26,38 @@ const update_products = routeWithErrorHandling(async (request: Request, response
                 [user.id],
             ),
         );
-        const validation = await z
-            .array(
-                cartProductSchema
-                    .partial()
-                    .required({
-                        id: true,
-                    })
-                    .refine(({ id }) => {
-                        return cartProducts.find((cp) => cp.id === id) != null;
-                    }, { message: "Product is not in cart." }),
-            )
-            .safeParseAsync(request.body);
-            
-        if (!validation.success) {
-            response.status(400).json(validation.error.flatten());
+
+        const schema = cartProductSchema
+            .partial()
+            .required({ id: true })
+            .refine(
+                ({ id }) => {
+                    return cartProducts.find((cp) => cp.id === id) != null;
+                },
+                { message: "Product is not in cart." },
+            );
+
+        const failedValidations: Record<string, z.typeToFlattenedError<z.output<typeof schema>>> = {};
+        const successfulValidations: Array<z.output<typeof schema>> = [];
+        await Promise.all(
+            (request.body as Array<z.input<typeof schema>>).map(async (data) => {
+                const validation = await schema.safeParseAsync(data);
+                if (validation.success) {
+                    successfulValidations.push(validation.data);
+                    return;
+                }
+
+                failedValidations[data.id] = validation.error.flatten();
+            }),
+        );
+
+        if (Object.keys(failedValidations).length > 0) {
+            response.status(400).json(failedValidations);
             return;
         }
 
         await Promise.all(
-            validation.data.map(async (data) => {
+            successfulValidations.map(async (data) => {
                 await CartProduct.update(data);
             }),
         );

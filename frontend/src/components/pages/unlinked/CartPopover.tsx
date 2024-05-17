@@ -38,7 +38,7 @@ CartPopover.Panel = function CartPopover({
     const queryClient = useQueryClient();
     const { cart } = useAppContext();
     const [cartProductsUpdate, setCartProductUpdate] = useState<apiFetchBodyDataUnit[]>([]);
-    const [errors, setErrors] = useState<FormErrors>();
+    const [errors, setErrors] = useState<Record<CartProductType["id"], FormErrors>>();
     const updateCartProductsUpdateData = useCallback(
         ({ id, amount }: apiFetchBodyDataUnit) => {
             const cartProduct = cart?.products.find((cp) => cp.id === id);
@@ -67,9 +67,8 @@ CartPopover.Panel = function CartPopover({
                 return response;
             }
 
-            const _errors = await response.json();
-            setErrors(_errors);
-            return Promise.reject()
+            setErrors(await response.json());
+            return Promise.reject();
         },
         onSuccess: () => {
             queryClient.setQueryData(["user_and_cart"], (previous: UsersUserAPIQuery) => {
@@ -104,7 +103,7 @@ CartPopover.Panel = function CartPopover({
     }
 
     return (
-        <UserCartContext.Provider value={{ updateCartProductsUpdateData, errors }}>
+        <UserCartContext.Provider value={{ updateCartProductsUpdateData, errors, setCartProductUpdate }}>
             <Popover.Panel
                 ref={setPopperElement}
                 style={styles.popper}
@@ -164,9 +163,40 @@ CartPopover.Panel = function CartPopover({
 };
 
 function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
+    const queryClient = useQueryClient();
     const { product, amount } = cartProduct;
-    const { updateCartProductsUpdateData, errors } = useUserCartContext();
-    console.log(errors)
+    const { updateCartProductsUpdateData, errors, setCartProductUpdate } = useUserCartContext();
+    const localErrors = errors?.[cartProduct.id];
+    const formErrors = localErrors?.formErrors ?? [];
+    const fieldErrors = localErrors?.fieldErrors ?? {};
+    const mutation = useMutation({
+        mutationFn: async () => {
+            const response = await fetch(`/api/cart/remove_product/${cartProduct.id}`, {
+                method: "POST",
+            });
+
+            if (response.ok) {
+                return response;
+            }
+        },
+        onSuccess: () => {
+            queryClient.setQueryData(["user_and_cart"], (previous: UsersUserAPIQuery) => {
+                if (previous == null) {
+                    return null;
+                }
+                
+                return {
+                    ...previous,
+                    cart: {
+                        ...previous.cart,
+                        products: previous.cart.products.filter((cp) => cp.id !== cartProduct.id),
+                    },
+                };
+            });
+            setCartProductUpdate((previous) => previous.filter((cp) => cp.id !== cartProduct.id));
+        },
+    });
+
     return (
         <div className="flex flex-col gap-2">
             <div className="grid grid-cols-12 gap-2 w-full text-gray-900">
@@ -206,6 +236,7 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                                 theme-button-generic-white
                                 justify-center 
                             `}
+                            onClick={() => mutation.mutate()}
                         >
                             Remove Cart Item
                         </button>
@@ -227,7 +258,6 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                 >
                     <input
                         type="text"
-                        inputMode="numeric"
                         defaultValue={amount}
                         onChange={({ target: { value } }) => {
                             updateCartProductsUpdateData({ id: cartProduct.id, amount: parseInt(value) });
@@ -237,12 +267,23 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                 <div className="text-sm">x</div>
                 <div className="text-sm font-medium">${product.price}</div>
             </div>
-            {errors != null && (
-                <div className="flex flex-col gap-0.5">
-
+            {localErrors != null && (
+                <div className="flex flex-col gap-2 p-2 border border-dashed border-gray-900 bg-red-100">
+                    {Object.entries(fieldErrors).map(([field, messages]) => (
+                        <>
+                            <div className="text-sm font-medium capitalize leading-none">{field}</div>
+                            <hr className="app__x-divider border-dashed"></hr>
+                            {messages?.map((message) => <div className="text-sm leading-none">· {message}</div>)}
+                        </>
+                    ))}
+                    {formErrors.map((message, i) => (
+                        <>
+                            {i !== 0 && <hr className="app__x-divider border-dashed"></hr>}
+                            <div className="text-sm leading-none">· {message}</div>
+                        </>
+                    ))}
                 </div>
             )}
-  
         </div>
     );
 }

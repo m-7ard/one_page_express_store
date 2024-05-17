@@ -20,7 +20,7 @@ const remove_product = routeWithErrorHandling(async (request: Request, response:
                         cart_product LEFT JOIN cart
                     ON
                         cart_product.cart_id = cart.id
-                    WHERE cart.user_id = ? AND cart_product.product_id = ?
+                    WHERE cart.user_id = ? AND cart_product.id = ?
                 `,
                 [user.id, request.params.id],
             ),

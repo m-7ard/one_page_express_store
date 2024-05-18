@@ -2,19 +2,23 @@ import AbstractPopover, { AbstractPopoverPanel, AbstractPopoverTrigger } from ".
 import { Popover } from "@headlessui/react";
 import React, { useCallback, useState } from "react";
 import { UserCartContext, useAppContext, useUserCartContext } from "../../../Context";
-import { CartProductType } from "../../../Types";
+import { CartProductType, CartType } from "../../../Types";
 import ProductInformationDisplayDialog from "./ProductInformationDisplayDialog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { FormErrors } from "../../elements/forms/GenericForm";
 import { UsersUserAPIQuery } from "../linked/App/App";
 
-export type apiFetchBodyDataUnit = Pick<CartProductType, "amount" | "id">;
-
 export default function CartPopover({ Trigger }: { Trigger: AbstractPopoverTrigger }) {
+    const { cart } = useAppContext();
+
+    if (cart == null) {
+        return;
+    }
+
     return (
         <AbstractPopover
             Trigger={Trigger}
-            Panel={CartPopover.Panel}
+            Panel={(panelProps) => <CartPopover.Panel {...panelProps} cart={cart} />}
             options={{
                 placement: "bottom-end",
                 strategy: "fixed",
@@ -34,33 +38,47 @@ export default function CartPopover({ Trigger }: { Trigger: AbstractPopoverTrigg
 CartPopover.Panel = function CartPopover({
     setPopperElement,
     popper: { styles, attributes },
-}: React.ComponentProps<AbstractPopoverPanel>) {
+    cart,
+}: React.ComponentProps<AbstractPopoverPanel> & { cart: CartType }) {
     const queryClient = useQueryClient();
-    const { cart } = useAppContext();
-    const [cartProductsUpdate, setCartProductUpdate] = useState<apiFetchBodyDataUnit[]>([]);
+    const [cartProductsUpdate, setCartProductUpdate] = useState<
+        Record<CartProductType["id"], Pick<CartProductType, "amount">>
+    >({});
     const [errors, setErrors] = useState<Record<CartProductType["id"], FormErrors>>();
+    const [cartProductsCheckout, setCartProductCheckout] = useState<CartProductType[]>(cart.products);
     const updateCartProductsUpdateData = useCallback(
-        ({ id, amount }: apiFetchBodyDataUnit) => {
-            const cartProduct = cart?.products.find((cp) => cp.id === id);
+        ({ id, ...data }: Pick<CartProductType, "amount" | "id">) => {
+            const cartProduct = cart.products.find((cp) => cp.id === id);
             if (cartProduct == null) {
-                throw `Cart product with id ${id} in user cart`;
+                throw `Cart product with id "${id}" in user cart doesn't exist.`;
             }
-            if (cartProduct.amount === amount) {
-                setCartProductUpdate((previous) => previous.filter((cp) => cp.id !== id));
+            if (cartProduct.amount === data.amount) {
+                setCartProductUpdate((previous) => {
+                    const newState = { ...previous };
+                    delete newState[id];
+                    return newState;
+                });
                 return;
             }
-            setCartProductUpdate((previous) => [...previous, { id, amount }]);
+
+            setCartProductUpdate((previous) => {
+                const newState = { ...previous };
+                newState[id] = data;
+                return newState;
+            });
         },
         [cart],
     );
+    0;
     const mutation = useMutation({
         mutationFn: async () => {
+            setErrors({});
             const response = await fetch("/api/cart/update_products", {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
                 },
-                body: JSON.stringify(cartProductsUpdate),
+                body: JSON.stringify(Object.entries(cartProductsUpdate).map(([id, data]) => ({ id, ...data }))),
             });
 
             if (response.ok) {
@@ -81,7 +99,7 @@ CartPopover.Panel = function CartPopover({
                     cart: {
                         ...previous.cart,
                         products: previous.cart.products.map((cp) => {
-                            const overrideData = cartProductsUpdate.find(({ id }) => cp.id === id);
+                            const overrideData = cartProductsUpdate[cp.id];
                             if (overrideData == null) {
                                 return cp;
                             }
@@ -103,7 +121,15 @@ CartPopover.Panel = function CartPopover({
     }
 
     return (
-        <UserCartContext.Provider value={{ updateCartProductsUpdateData, errors, setCartProductUpdate }}>
+        <UserCartContext.Provider
+            value={{
+                updateCartProductsUpdateData,
+                errors,
+                setCartProductUpdate,
+                cartProductsCheckout,
+                setCartProductCheckout,
+            }}
+        >
             <Popover.Panel
                 ref={setPopperElement}
                 style={styles.popper}
@@ -113,46 +139,57 @@ CartPopover.Panel = function CartPopover({
             >
                 <div className="generic-panel__body">
                     <div className="generic-panel__title">Cart</div>
-                    <hr className="app__x-divider"></hr>
-                    <div className="flex flex-col gap-2 max-h-96 overflow-auto pr-1">
-                        {cart.products.map((cartProduct, i) => (
-                            <>
-                                <CartItem key={cartProduct.id} cartProduct={cartProduct} />
-                                {i !== cart.products.length - 1 && <hr className="app__x-divider"></hr>}
-                            </>
-                        ))}
-                    </div>
-                    <button
-                        className={`
-                            mixin-button-like
-                            mixin-button-sm
-                            theme-button-generic-green
-                            ${cartProductsUpdate.length === 0 && "contrast-75 cursor-not-allowed"}
-                            justify-center
-                        `}
-                        onClick={() => mutation.mutate()}
-                    >
-                        Update Cart
-                    </button>
+                    {cart.products.length > 0 && (
+                        <>
+                            <hr className="app__x-divider"></hr>
+                            <div className="flex flex-col gap-2 max-h-96 overflow-auto pr-1">
+                                {cart.products.map((cartProduct, i) => (
+                                    <>
+                                        <CartItem key={cartProduct.id} cartProduct={cartProduct} />
+                                        {i !== cart.products.length - 1 && <hr className="app__x-divider"></hr>}
+                                    </>
+                                ))}
+                            </div>
+                            <button
+                                className={`
+                                    mixin-button-like
+                                    mixin-button-base
+                                    theme-button-generic-green
+                                    ${Object.keys(cartProductsUpdate).length === 0 && "contrast-75 cursor-not-allowed"}
+                                    justify-center
+                                    ml-auto
+                                `}
+                                onClick={() => mutation.mutate()}
+                            >
+                                Update Cart
+                            </button>
+                        </>
+                    )}
                     <hr className="app__x-divider"></hr>
                     <div>
                         <div className="flex flex-row justify-between">
                             <div className="text-base font-medium">Total</div>
-                            <div className="text-base">$1000</div>
-                        </div>
-                        <div className="flex flex-row justify-between">
-                            <div className="text-base font-medium">Shipping</div>
-                            <div className="text-base">$5.99</div>
+                            <div className="text-base">
+                                $
+                                {cart.products.reduce((acc, { amount, product, id }) => {
+                                    const inCheckout = cartProductsCheckout.find((cp) => cp.id === id) != null;
+                                    if (inCheckout) {
+                                        return product.price * amount + acc;
+                                    }
+                                    return acc;
+                                }, 0)}
+                            </div>
                         </div>
                     </div>
                     <hr className="app__x-divider"></hr>
                     <button
                         className={`
-                        mixin-button-like
-                        mixin-button-base
-                        theme-button-generic-yellow
-                        justify-center
-                    `}
+                            mixin-button-like
+                            mixin-button-base
+                            theme-button-generic-yellow
+                            ${cartProductsCheckout.length === 0 && "contrast-75 cursor-not-allowed"}
+                            justify-center
+                        `}
                     >
                         Checkout
                     </button>
@@ -165,11 +202,12 @@ CartPopover.Panel = function CartPopover({
 function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
     const queryClient = useQueryClient();
     const { product, amount } = cartProduct;
-    const { updateCartProductsUpdateData, errors, setCartProductUpdate } = useUserCartContext();
+    const { updateCartProductsUpdateData, errors, setCartProductUpdate, setCartProductCheckout, cartProductsCheckout } =
+        useUserCartContext();
     const localErrors = errors?.[cartProduct.id];
     const formErrors = localErrors?.formErrors ?? [];
     const fieldErrors = localErrors?.fieldErrors ?? {};
-    const mutation = useMutation({
+    const removeCartItem = useMutation({
         mutationFn: async () => {
             const response = await fetch(`/api/cart/remove_product/${cartProduct.id}`, {
                 method: "POST",
@@ -184,7 +222,7 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                 if (previous == null) {
                     return null;
                 }
-                
+
                 return {
                     ...previous,
                     cart: {
@@ -193,7 +231,7 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                     },
                 };
             });
-            setCartProductUpdate((previous) => previous.filter((cp) => cp.id !== cartProduct.id));
+            setCartProductUpdate({});
         },
     });
 
@@ -236,7 +274,7 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                                 theme-button-generic-white
                                 justify-center 
                             `}
-                            onClick={() => mutation.mutate()}
+                            onClick={() => removeCartItem.mutate()}
                         >
                             Remove Cart Item
                         </button>
@@ -245,7 +283,17 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
             </div>
             <div className="flex flex-row gap-2 items-center">
                 <div className="text-sm">In Cart</div>
-                <input type="checkbox" defaultChecked />
+                <input
+                    type="checkbox"
+                    defaultChecked={cartProductsCheckout.find(({ id }) => cartProduct.id === id) != null}
+                    onChange={({ target: { checked } }) => {
+                        if (checked) {
+                            setCartProductCheckout((previous) => [...previous, cartProduct]);
+                        } else {
+                            setCartProductCheckout((previous) => previous.filter(({ id }) => id !== cartProduct.id));
+                        }
+                    }}
+                />
                 <div
                     className={`
                         mixin-char-input-like
@@ -268,21 +316,26 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                 <div className="text-sm font-medium">${product.price}</div>
             </div>
             {localErrors != null && (
-                <div className="flex flex-col gap-2 p-2 border border-dashed border-gray-900 bg-red-100">
-                    {Object.entries(fieldErrors).map(([field, messages]) => (
-                        <>
-                            <div className="text-sm font-medium capitalize leading-none">{field}</div>
-                            <hr className="app__x-divider border-dashed"></hr>
-                            {messages?.map((message) => <div className="text-sm leading-none">· {message}</div>)}
-                        </>
-                    ))}
+                <>
                     {formErrors.map((message, i) => (
-                        <>
-                            {i !== 0 && <hr className="app__x-divider border-dashed"></hr>}
-                            <div className="text-sm leading-none">· {message}</div>
-                        </>
+                        <div className="flex flex-col gap-0.5 p-2 border border-dashed border-gray-900 bg-red-100">
+                            <div className="text-sm leading-none font-medium">{message}</div>
+                        </div>
                     ))}
-                </div>
+                    {Object.entries(fieldErrors).map(([field, messages]) => (
+                        <div className="flex flex-col border border-dashed border-gray-900 bg-red-100">
+                            <div>
+                                <div className="text-sm font-medium capitalize leading-none p-2">{field}</div>
+                                <hr className="app__x-divider border-dashed"></hr>
+                                <div className="space-y-0.5 p-2">
+                                    {messages?.map((message) => (
+                                        <div className="text-sm leading-none">&bull; {message}</div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </>
             )}
         </div>
     );

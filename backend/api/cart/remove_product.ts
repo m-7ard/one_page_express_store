@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { DatabaseCart, DatabaseCartProduct } from "../../backend/database_types.js";
 import { cartSerializer } from "../../backend/serializers.js";
-import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperationWithRollback, mysqlGetOrNull, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { CartProduct } from "../../backend/managers.js";
 
 const remove_product = routeWithErrorHandling(async (request: Request, response: Response) => {
@@ -12,7 +12,7 @@ const remove_product = routeWithErrorHandling(async (request: Request, response:
     }
 
     return await dbOperationWithRollback(async (connection) => {
-        const cartProduct = await mysqlGetOrThrow<DatabaseCartProduct>(
+        const cartProduct = await mysqlGetOrNull<DatabaseCartProduct>(
             connection.execute(
                 `
                 SELECT cart_product.* 
@@ -25,6 +25,12 @@ const remove_product = routeWithErrorHandling(async (request: Request, response:
                 [user.id, request.params.id],
             ),
         );
+        
+        if (cartProduct == null) {
+            response.status(200).send()
+            return;
+        }
+
         await CartProduct.delete(cartProduct);
         response.status(200).send();
     });

@@ -7,7 +7,8 @@ import { createCartProduct, createSessionCookie, objectToFormData, test, testCas
 import { cartProductMixin, productsMixin, usersMixin } from "./mixins.js";
 import assert from "assert";
 import { cartProductSerializer, cartSerializer } from "../backend/serializers.js";
-import { z } from "zod";
+import { object, z } from "zod";
+import { cartProductSchema } from "../backend/schemas.js";
 
 context.testsToRun = "__all__";
 
@@ -116,6 +117,28 @@ testCase(async () => {
     }, "Remove Cart Product");
 
     await test(async () => {
+        const { cart, cartProducts, EXPECTED_CART_PRODUCTS_COUNT } = await ADMIN_1_CART_MIXN();
+        await fetch(`http://localhost:3001/api/cart/remove_product/${cartProducts.ADMIN_2__PRODUCT_1.id}`, {
+            method: "POST",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: ADMIN_1_COOKIE,
+            },
+        });
+        const response = await fetch(
+            `http://localhost:3001/api/cart/remove_product/${cartProducts.ADMIN_2__PRODUCT_1.id}`,
+            {
+                method: "POST",
+                headers: {
+                    Origin: env.ORIGIN as string,
+                    Cookie: ADMIN_1_COOKIE,
+                },
+            },
+        );
+        assert.strictEqual(response.status, 200);
+    }, "Return Status Code 200 After Trying To Remove Already Removed Cart Product");
+
+    await test(async () => {
         const { cart, cartProducts } = await ADMIN_1_CART_MIXN();
         const EXPECTED_NEW_AMOUNT_ADMIN_2__PRODUCT_1 = cartProducts.ADMIN_2__PRODUCT_1.amount + 10;
         const EXPECTED_NEW_AMOUNT_ADMIN_2__PRODUCT_2 = cartProducts.ADMIN_2__PRODUCT_2.amount + 1;
@@ -176,6 +199,35 @@ testCase(async () => {
             cartProducts.ADMIN_2__PRODUCT_1.amount,
         );
     }, "Fail Update Cart Products That Are Not In The Request User Cart");
+
+    await test(async () => {
+        const { cart, cartProducts } = await ADMIN_1_CART_MIXN();
+
+        const response = await fetch(`http://localhost:3001/api/cart/update_products/`, {
+            method: "PUT",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: ADMIN_1_COOKIE,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify([
+                {
+                    id: cartProducts.ADMIN_2__PRODUCT_1.id,
+                    amount: "abc",
+                },
+            ]),
+        });
+
+        const EXPECTED_ERROR_SCHEMA = z.record(
+            z.object({
+                formErrors: z.array(z.string()),
+                fieldErrors: z.record(z.array(z.string())),
+            }),
+        );
+        const errors = await response.json();
+        const validation = EXPECTED_ERROR_SCHEMA.safeParse(errors);
+        assert.ok(validation.success);
+    }, "Confirm The Shallow Shape Of Update Cart Product Errors");
 
     await test(async () => {
         const listProductsResponse = await fetch(`http://localhost:3001/api/cart/list_products/`, {

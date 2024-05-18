@@ -58,7 +58,7 @@ const update_products = routeWithErrorHandling(async (request: Request, response
 
         await Promise.all(
             successfulValidations.map(async (data) => {
-                await CartProduct.update(data);
+                return CartProduct.update(data);
             }),
         );
 

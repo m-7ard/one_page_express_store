@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { ZodOptional, z } from "zod";
 import { DatabaseUser } from "./database_types.js";
 import { cartProductSchema, productSchema, userSchema } from "./schemas.js";
 import {
@@ -16,11 +16,11 @@ import { BASE_DIR } from "./settings.js";
 import { rm, writeFile } from "fs/promises";
 import { productSerializer } from "./serializers.js";
 
+interface UserCreate extends z.output<typeof userSchema> {}
+
 interface UserUpdate extends Partial<z.output<typeof userSchema>> {
     id: NonNullable<z.output<typeof userSchema.shape.id>>;
 }
-
-interface UserCreate extends z.output<typeof userSchema> {}
 
 interface UserDelete extends Partial<z.output<typeof userSchema>> {
     id: NonNullable<z.output<typeof userSchema.shape.id>>;
@@ -79,7 +79,7 @@ export const User = {
     },
 };
 
-interface ProductCreate extends z.output<typeof productSchema> {}
+type ProductCreate = z.output<typeof productSchema>
 
 interface ProductUpdate extends Partial<z.output<typeof productSchema>> {
     id: NonNullable<z.output<typeof productSchema.shape.id>>;

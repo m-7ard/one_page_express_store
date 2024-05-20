@@ -11,7 +11,8 @@ import { dbOperationWithRollback, mysqlQueryTableByID, routeWithErrorHandling } 
 import { rm } from "fs/promises";
 import { Product } from "../../backend/managers.js";
 
-export default routeWithErrorHandling(async (request: Request, response: Response) => {
+const edit = routeWithErrorHandling(async (request: Request, response: Response) => {
+    console.log('abcssssss')
     const user = response.locals.user;
     if (user == null || user.is_admin === false) {
         response.status(403).send();
@@ -21,7 +22,8 @@ export default routeWithErrorHandling(async (request: Request, response: Respons
     await dbOperationWithRollback(async (connection) => {
         const { newImages, existingImages } = getImages(request);
         const validation = await productSchema
-            .required()
+            .partial()
+            .required({ id: true })
             .refine(
                 async (values) => {
                     const [productQuery] = await connection.execute<DatabaseProduct[]>(
@@ -54,3 +56,5 @@ export default routeWithErrorHandling(async (request: Request, response: Respons
     });
     return;
 });
+
+export default edit;

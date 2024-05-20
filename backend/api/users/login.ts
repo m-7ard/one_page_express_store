@@ -8,11 +8,12 @@ import { generateId } from "lucia";
 import { lucia } from "../../lib/auth.js";
 import { cartSerializer, userSerializer } from "../../backend/serializers.js";
 import { DatabaseCart } from "../../backend/database_types.js";
+import { userSchema } from "../../backend/schemas.js";
 
-const schema = z
-    .object({
-        username: z.string().min(4).max(25),
-        password: z.string().min(8).max(255),
+const schema = userSchema
+    .pick({
+        username: true,
+        password: true
     })
     .refine(
         async ({ username, password }) =>

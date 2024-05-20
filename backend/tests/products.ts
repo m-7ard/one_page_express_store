@@ -21,7 +21,7 @@ const EXPECTED_SPEC_BUILDING_IS_TALL = 2;
 const DEFAULT_ORDER_BY = "id DESC";
 const REQUIRED_PRODUCT_FIELDS = ["name", "price", "kind", "specification"];
 
-context.testsToRun = '__all__';
+context.testsToRun = "__all__";
 
 testCase(async () => {
     const pool = getFromContext("pool");
@@ -243,7 +243,7 @@ testCase(async () => {
         const validImagePath = path.join(BASE_DIR, "backend", "static", "images", "tests", "valid_image.jpg");
         const validFile = readFileSync(validImagePath);
         const sendData = objectToFormData(VALID_CREATE_PRODUCT_DATA);
-        for (let i = 0; i < PRODUCT.MAX_IMAGES_LENGTH; i++) {
+        for (let i = 0; i < PRODUCT.MAX_IMAGES_LENGTH + 1; i++) {
             sendData.append(
                 `image-${i}`,
                 new Blob([validFile], { type: mime.lookup(validImagePath) || undefined }),

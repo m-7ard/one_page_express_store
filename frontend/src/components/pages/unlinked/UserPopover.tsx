@@ -77,11 +77,11 @@ export default function UserPopover({ Trigger }: { Trigger: AbstractPopoverTrigg
                         },
                     },
                     {
-                        name: 'offset',
+                        name: "offset",
                         options: {
-                          offset: [0, 4],
+                            offset: [0, 4],
                         },
-                      },
+                    },
                 ],
             }}
         />

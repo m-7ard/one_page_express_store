@@ -138,3 +138,35 @@ export const cartProductSchema = z.object({
         }),
     amount: z.coerce.number().min(1),
 });
+
+export const orderSchema = z.object({
+    id: z.coerce
+        .number()
+        .min(1)
+        .refine(async (value) => (await mysqlQueryTableByID({ table: "order", id: value, fields: 1 })).length !== 0, {
+            message: "Cart Product does not exist.",
+        })
+        .optional(),
+    user_id: userSchema.shape.id.optional(),
+    product_id: productSchema.shape.id.optional(),
+    amount: z.number().min(0),
+    date_created: z.date(),
+    archive: z.string().transform((value, ctx) => {
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Error parsing specification.",
+            });
+            return z.NEVER;
+        }
+    }),
+    shipping_name: z.string().min(1).max(50),
+    shipping_address_primary: z.string().min(1).max(255),
+    shipping_address_secondary: z.string().max(255).default(""),
+    shipping_city: z.string().min(1).max(100),
+    shipping_state: z.string().min(1).max(100),
+    shipping_zip: z.string().min(1).max(50),
+    shipping_country: z.string().min(1).max(100),
+});

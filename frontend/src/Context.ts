@@ -42,5 +42,5 @@ export const [UserCartContext, useUserCartContext] = createUseContext<{
     errors: Record<number, FormErrors> | undefined;
     setCartProductUpdate: React.Dispatch<React.SetStateAction<Record<number, Pick<CartProductType, "amount">>>>;
     cartProductsCheckout: CartProductType[];
-    setCartProductCheckout: React.Dispatch<React.SetStateAction<CartProductType[]>>;
+    setCartProductsCheckout: React.Dispatch<React.SetStateAction<CartProductType[]>>;
 }>("useUserCartContext has to be used within <UserCartContext.Provider>");

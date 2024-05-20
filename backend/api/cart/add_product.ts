@@ -6,7 +6,6 @@ import { BASE_DIR } from "../../backend/settings.js";
 import { DatabaseCart, DatabaseCartProduct, DatabaseProduct } from "../../backend/database_types.js";
 import { cartProductSerializer, productSerializer } from "../../backend/serializers.js";
 import { cartProductSchema, productSchema } from "../../backend/schemas.js";
-import { getImages } from "./_utils.js";
 import {
     dbOperationWithRollback,
     mysqlGetOrNull,

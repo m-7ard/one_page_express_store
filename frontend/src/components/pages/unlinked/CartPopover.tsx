@@ -18,7 +18,7 @@ export default function CartPopover({ Trigger }: { Trigger: AbstractPopoverTrigg
     return (
         <AbstractPopover
             Trigger={Trigger}
-            Panel={(panelProps) => <CartPopover.Panel {...panelProps} cart={cart} />}
+            Panel={CartPanelProvider}
             options={{
                 placement: "bottom-end",
                 strategy: "fixed",
@@ -29,10 +29,26 @@ export default function CartPopover({ Trigger }: { Trigger: AbstractPopoverTrigg
                             altAxis: true,
                         },
                     },
+                    {
+                        name: "offset",
+                        options: {
+                            offset: [0, 4],
+                        },
+                    },
                 ],
             }}
         />
     );
+}
+
+function CartPanelProvider(props: React.ComponentProps<AbstractPopoverPanel>) {
+    const { cart } = useAppContext();
+
+    if (cart == null) {
+        return;
+    }
+
+    return <CartPopover.Panel {...props} cart={cart} />
 }
 
 CartPopover.Panel = function CartPopover({
@@ -45,7 +61,7 @@ CartPopover.Panel = function CartPopover({
         Record<CartProductType["id"], Pick<CartProductType, "amount">>
     >({});
     const [errors, setErrors] = useState<Record<CartProductType["id"], FormErrors>>();
-    const [cartProductsCheckout, setCartProductCheckout] = useState<CartProductType[]>(cart.products);
+    const [cartProductsCheckout, setCartProductsCheckout] = useState<CartProductType[]>(cart.products);
     const updateCartProductsUpdateData = useCallback(
         ({ id, ...data }: Pick<CartProductType, "amount" | "id">) => {
             const cartProduct = cart.products.find((cp) => cp.id === id);
@@ -69,7 +85,7 @@ CartPopover.Panel = function CartPopover({
         },
         [cart],
     );
-    0;
+
     const mutation = useMutation({
         mutationFn: async () => {
             setErrors({});
@@ -127,7 +143,7 @@ CartPopover.Panel = function CartPopover({
                 errors,
                 setCartProductUpdate,
                 cartProductsCheckout,
-                setCartProductCheckout,
+                setCartProductsCheckout,
             }}
         >
             <Popover.Panel
@@ -202,7 +218,7 @@ CartPopover.Panel = function CartPopover({
 function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
     const queryClient = useQueryClient();
     const { product, amount } = cartProduct;
-    const { updateCartProductsUpdateData, errors, setCartProductUpdate, setCartProductCheckout, cartProductsCheckout } =
+    const { updateCartProductsUpdateData, errors, setCartProductUpdate, setCartProductsCheckout, cartProductsCheckout } =
         useUserCartContext();
     const localErrors = errors?.[cartProduct.id];
     const formErrors = localErrors?.formErrors ?? [];
@@ -288,9 +304,9 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
                     defaultChecked={cartProductsCheckout.find(({ id }) => cartProduct.id === id) != null}
                     onChange={({ target: { checked } }) => {
                         if (checked) {
-                            setCartProductCheckout((previous) => [...previous, cartProduct]);
+                            setCartProductsCheckout((previous) => [...previous, cartProduct]);
                         } else {
-                            setCartProductCheckout((previous) => previous.filter(({ id }) => id !== cartProduct.id));
+                            setCartProductsCheckout((previous) => previous.filter(({ id }) => id !== cartProduct.id));
                         }
                     }}
                 />

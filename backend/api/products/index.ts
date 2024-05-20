@@ -28,6 +28,7 @@ function uploadConfigMiddleware(config: (req: Request, res: Response, next: (err
                             }
                         };
                         response.status(400).json(errors);
+                        next()
                         return;
                     };
 

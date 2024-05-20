@@ -19,12 +19,13 @@ const create = routeWithErrorHandling(async (request: Request, response: Respons
 
     await dbOperationWithRollback(async (connection) => {
         const { newImages, existingImages } = getImages(request);
-        const validation = await productSchema.safeParseAsync({
-            ...request.body,
-            newImages,
-            existingImages,
-            user_id: user.id,
-        });
+        const validation = await productSchema
+            .safeParseAsync({
+                ...request.body,
+                newImages,
+                existingImages,
+                user_id: user.id,
+            });
 
         if (validation.success) {
             const id = await Product.create(validation.data);
@@ -33,7 +34,8 @@ const create = routeWithErrorHandling(async (request: Request, response: Respons
             );
             return response.status(201).json(productSerializer.parse(product));
         } else {
-            return response.status(400).json(validation.error.flatten());
+            response.status(400).send();
+            return;
         }
     });
 });

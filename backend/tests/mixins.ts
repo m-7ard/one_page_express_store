@@ -33,6 +33,7 @@ export async function productsMixin({ users }: { users: UserData }): Promise<Pro
         ],
         existingImages: [],
         user_id: users.ADMIN_1.id,
+        available: 1
     });
     const ADMIN_2__PRODUCT_1 = await createProduct({
         name: "Test User Product",
@@ -45,6 +46,7 @@ export async function productsMixin({ users }: { users: UserData }): Promise<Pro
         ],
         existingImages: [],
         user_id: users.ADMIN_2.id,
+        available: 1
     });
     const ADMIN_2__PRODUCT_2 = await createProduct({
         name: "Test User Product 2",
@@ -57,6 +59,7 @@ export async function productsMixin({ users }: { users: UserData }): Promise<Pro
         ],
         existingImages: [],
         user_id: users.ADMIN_2.id,
+        available: 1
     });
 
     return { ADMIN_1__PRODUCT_1, ADMIN_2__PRODUCT_1, ADMIN_2__PRODUCT_2 };

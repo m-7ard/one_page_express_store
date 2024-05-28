@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { Request, Response } from "express";
 import { DatabaseUser } from "../../lib/db.js";
-import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperation, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { lucia } from "../../lib/auth.js";
 import { cartSerializer, userSerializer } from "../../backend/serializers.js";
 import { userSchema } from "../../backend/schemas.js";
@@ -11,7 +11,7 @@ import { DatabaseCart } from "../../backend/database_types.js";
 const schema = userSchema.extend({
     username: userSchema.shape.username.refine(
         async (value) =>
-            await dbOperationWithRollback(async (connection) => {
+            await dbOperation(async (connection) => {
                 const [userQuery, fields] = await connection.execute<DatabaseUser[]>(
                     "SELECT id FROM user WHERE username = ?",
                     [value],
@@ -39,7 +39,7 @@ const register = routeWithErrorHandling(async function register(request: Request
         const sessionCookie = lucia.createSessionCookie(session.id);
         response.appendHeader("Set-Cookie", sessionCookie.serialize());
 
-        return await dbOperationWithRollback(async (connection) => {
+        return await dbOperation(async (connection) => {
             const user = await mysqlGetOrThrow<DatabaseUser>(
                 connection.execute("SELECT * FROM user WHERE id = ?", [id]),
             );

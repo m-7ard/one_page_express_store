@@ -5,48 +5,20 @@ import list from "./list.js";
 import edit from "./edit.js";
 import drop from "./drop.js";
 import { PRODUCT } from "../../backend/constants.js";
-import { z } from "zod";
 const upload = multer();
 
+// Although the actual image limit is suppose to be 12
+// it is less complex to just simply let the view
+// validate it through the schema
 const uploadConfig = upload.fields(
-    Array.from({ length: 12 }).map((_, i) => ({
+    Array.from({ length: 13 }).map((_, i) => ({
         name: `image-${i}`,
         maxCount: PRODUCT.MAX_IMAGES_LENGTH,
     })),
 );
 
-function uploadConfigMiddleware(config: (req: Request, res: Response, next: (error?: any) => void) => void) {
-    return function(request: Request, response: Response, next: NextFunction) {
-        try {
-            config(request, response, function(error?: any) {
-                if (error) {
-                    if (error instanceof multer.MulterError && error.code === 'LIMIT_UNEXPECTED_FILE') {
-                        const errors: z.typeToFlattenedError<Record<string, string>> = {
-                            formErrors: [],
-                            fieldErrors: {
-                                'images': [`Cannot upload more than ${PRODUCT.MAX_IMAGES_LENGTH} images.`]
-                            }
-                        };
-                        response.status(400).json(errors);
-                        next()
-                        return;
-                    };
-
-                    response.status(500).send();
-                    return;
-                } else {
-                    next();
-                }
-            });
-        } catch (error) {
-            console.log('Error occurred:', error);
-            response.status(500).send();
-        }
-    };
-}
-
 export const router = express.Router();
-router.post("/create", uploadConfigMiddleware(uploadConfig), create);
+router.post("/create", uploadConfig, create);
 router.get("/list", list);
-router.put("/edit/:id", uploadConfigMiddleware(uploadConfig), edit);
+router.put("/edit/:id", uploadConfig, edit);
 router.post("/delete/:id", drop);

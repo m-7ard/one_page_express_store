@@ -2,7 +2,13 @@ import { env } from "process";
 import context, { getFromContext } from "../backend/context.js";
 import { DatabaseCart, DatabaseCartProduct, DatabaseUser } from "../backend/database_types.js";
 import { CartProduct, User } from "../backend/managers.js";
-import { mysqlGetOrNull, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "../backend/utils.js";
+import {
+    connectionProvider,
+    mysqlGetOrNull,
+    mysqlGetOrThrow,
+    mysqlGetQuery,
+    mysqlQueryTableByID,
+} from "../backend/utils.js";
 import { createCartProduct, createSessionCookie, objectToFormData, test, testCase } from "./_utils.js";
 import { cartProductMixin, productsMixin, usersMixin } from "./mixins.js";
 import assert from "assert";
@@ -15,12 +21,15 @@ context.testsToRun = "__all__";
 testCase(async () => {
     const pool = getFromContext("pool");
 
-    const users = await usersMixin();
-    const products = await productsMixin({ users });
-    const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
-    const ADMIN_1_COOKIE = await createSessionCookie(users.ADMIN_1.id);
+    const { users, products, CUSTOMER_1_COOKIE, ADMIN_1_COOKIE } = await connectionProvider(async () => {
+        const users = await usersMixin();
+        const products = await productsMixin({ users });
+        const CUSTOMER_1_COOKIE = await createSessionCookie(users.CUSTOMER_1.id);
+        const ADMIN_1_COOKIE = await createSessionCookie(users.ADMIN_1.id);
+        return { users, products, CUSTOMER_1_COOKIE, ADMIN_1_COOKIE };
+    });
 
-    const ADMIN_1_CART_MIXN = async () => {
+    const ADMIN_1_CART_MIXN = await connectionProvider(async () => {
         const cart = await mysqlGetOrThrow<DatabaseCart>(
             pool.execute("SELECT * FROM cart WHERE user_id = ?", [users.ADMIN_1.id]),
         );
@@ -41,7 +50,7 @@ testCase(async () => {
         const EXPECTED_CART_PRODUCTS_COUNT = Object.keys(cartProducts).length;
 
         return { cart, cartProducts, EXPECTED_CART_PRODUCTS_COUNT };
-    };
+    });
 
     await test(async () => {
         const response = await fetch(`http://localhost:3001/api/cart/add_product/${products.ADMIN_2__PRODUCT_1.id}`, {

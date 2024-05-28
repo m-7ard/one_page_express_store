@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { access } from "fs/promises";
 import { BASE_DIR } from "./settings.js";
-import { dbOperationWithRollback, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
+import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
 import { RowDataPacket } from "mysql2";
 import { PRODUCT } from "./constants.js";
 import { DatabaseUser } from "./database_types.js";
@@ -12,7 +12,7 @@ export const productSchema = z.object({
         .min(1)
         .refine(
             async (value) => {
-                return await dbOperationWithRollback(async (connection) => {
+                return await dbOperation(async (connection) => {
                     const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM product WHERE id = ?`, [
                         value,
                     ]);
@@ -101,11 +101,12 @@ export const productSchema = z.object({
         }
     }),
     user_id: z.string().refine(async (value) => {
-        return await dbOperationWithRollback(async (connection) => {
+        return await dbOperation(async (connection) => {
             const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM user WHERE id = ?`, [value]);
             return result.length !== 0;
         });
     }),
+    available: z.coerce.number().min(0),
 });
 
 export const userSchema = z.object({
@@ -147,21 +148,24 @@ export const orderSchema = z.object({
             message: "Cart Product does not exist.",
         })
         .optional(),
-    user_id: userSchema.shape.id.optional(),
-    product_id: productSchema.shape.id.optional(),
-    amount: z.number().min(0),
-    date_created: z.date(),
-    archive: z.string().transform((value, ctx) => {
-        try {
-            return JSON.parse(value);
-        } catch (error) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "Error parsing specification.",
-            });
-            return z.NEVER;
-        }
-    }),
+    user_id: z.string().nullable(),
+    product_id: z.number().nullable(),
+    amount: z.number().min(1),
+    date_created: z.date().optional(),
+    archive: z
+        .string()
+        .transform<Record<string, any>>((value, ctx) => {
+            try {
+                return JSON.parse(value);
+            } catch (error) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    message: "Error parsing archive.",
+                });
+                return z.NEVER;
+            }
+        })
+        .optional(),
     shipping_name: z.string().min(1).max(50),
     shipping_address_primary: z.string().min(1).max(255),
     shipping_address_secondary: z.string().max(255).default(""),
@@ -169,4 +173,5 @@ export const orderSchema = z.object({
     shipping_state: z.string().min(1).max(100),
     shipping_zip: z.string().min(1).max(50),
     shipping_country: z.string().min(1).max(100),
+    status: z.enum(["pending", "shipping", "completed", "canceled", "refunded"]).default("pending"),
 });

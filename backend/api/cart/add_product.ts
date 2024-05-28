@@ -7,7 +7,7 @@ import { DatabaseCart, DatabaseCartProduct, DatabaseProduct } from "../../backen
 import { cartProductSerializer, productSerializer } from "../../backend/serializers.js";
 import { cartProductSchema, productSchema } from "../../backend/schemas.js";
 import {
-    dbOperationWithRollback,
+    dbOperation,
     mysqlGetOrNull,
     mysqlGetOrThrow,
     mysqlQueryTableByID,
@@ -22,7 +22,7 @@ const add_product = routeWithErrorHandling(async (request: Request, response: Re
         return;
     }
 
-    await dbOperationWithRollback(async (connection) => {
+    await dbOperation(async (connection) => {
         const cart = await mysqlGetOrThrow<DatabaseCart>(
             connection.execute("SELECT * FROM cart WHERE user_id = ?", [user.id]),
         );

@@ -1,6 +1,7 @@
 import { number, z } from "zod";
-import { dbOperationWithRollback, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
+import { dbOperation, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
 import { DatabaseCartProduct, DatabaseProduct } from "./database_types.js";
+import { orderSchema } from "./schemas.js";
 
 export const userSerializer = z.object({
     id: z.string(),
@@ -51,7 +52,7 @@ export const cartSerializer = z
         user_id: z.string(),
     })
     .transform(async (values, ctx) => {
-        const cartProducts = await dbOperationWithRollback(
+        const cartProducts = await dbOperation(
             async (connection) =>
                 await mysqlGetQuery<DatabaseCartProduct>(
                     connection.execute("SELECT * FROM cart_product WHERE cart_id = ?", [values.id]),
@@ -70,3 +71,30 @@ export const cartSerializer = z
             products: validation.data,
         };
     });
+
+export const orderSerializer = z.object({
+    id: z.number().min(1),
+    user_id: z.string().nullable(),
+    product_id: z.number().min(1).nullable(),
+    amount: z.number().min(1),
+    date_created: z.date(),
+    archive: z.string().transform<Record<string, any>>((value, ctx) => {
+        try {
+            return JSON.parse(value);
+        } catch (error) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Error parsing specification.",
+            });
+            return z.NEVER;
+        }
+    }),
+    shipping_name: z.string(),
+    shipping_address_primary: z.string(),
+    shipping_address_secondary: z.string(),
+    shipping_city: z.string(),
+    shipping_state: z.string(),
+    shipping_zip: z.string(),
+    shipping_country: z.string(),
+    status: orderSchema.shape.status,
+})

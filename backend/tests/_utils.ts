@@ -1,4 +1,4 @@
-import { blueText, greenText, mysqlGetOrThrow, mysqlQueryTableByID, redText } from "../backend/utils.js";
+import { blueText, dbOperation, greenText, mysqlGetOrThrow, mysqlQueryTableByID, redText } from "../backend/utils.js";
 import mysql, { ResultSetHeader } from "mysql2/promise";
 import { env } from "process";
 import context, { getFromContext } from "../backend/context.js";
@@ -165,6 +165,7 @@ export async function createProduct({
     specification = [],
     existingImages = [],
     description = "lorem ipsum",
+    available,
 }: {
     name: string;
     price: number;
@@ -173,6 +174,7 @@ export async function createProduct({
     existingImages: string[];
     kind: string;
     description?: string;
+    available: number;
 }) {
     const id = await Product.create({
         name,
@@ -183,6 +185,7 @@ export async function createProduct({
         existingImages: existingImages.map((fileName, index) => ({ index, fileName })),
         specification,
         user_id,
+        available,
     });
     const [product] = await mysqlQueryTableByID<DatabaseProduct>({ table: "product", id });
     return product;
@@ -197,8 +200,11 @@ export async function createCartProduct({
     amount: number;
     product_id: number;
 }) {
-    const pool = getFromContext("pool");
-    const cart = await mysqlGetOrThrow<DatabaseCart>(pool.execute("SELECT * FROM cart WHERE user_id = ?", [user_id]));
+    const cart = await dbOperation(async (connection) => {
+        return await mysqlGetOrThrow<DatabaseCart>(
+            connection.execute("SELECT * FROM cart WHERE user_id = ?", [user_id]),
+        );
+    });
     const id = await CartProduct.create({ cart_id: cart.id, amount, product_id });
     const [cartProduct] = await mysqlQueryTableByID<DatabaseCartProduct>({ table: "cart_product", id });
     return cartProduct;

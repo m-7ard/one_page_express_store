@@ -1,3 +1,4 @@
+import { AsyncLocalStorage } from "async_hooks";
 import mysql from "mysql2/promise";
 
 interface Context {
@@ -17,5 +18,8 @@ export function getFromContext<K extends keyof Context>(key: K): NonNullable<Con
     }
     return value;
 }
+
+export const asyncLocalStorage = new AsyncLocalStorage<mysql.PoolConnection>();
+
 
 export default context;

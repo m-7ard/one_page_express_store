@@ -89,13 +89,9 @@ testCase(async () => {
         assert.deepStrictEqual(data.results, z.array(productSerializer).parse(expectedData));
     }, "List Products With Specification Query");
 
-
-
     //////////////
     /// CREATE
     ///
-
-
 
     const VALID_CREATE_PRODUCT_DATA = {
         name: "New Ad",
@@ -106,7 +102,8 @@ testCase(async () => {
             ["building", "tall"],
             ["chicken", "coop"],
         ]),
-    }
+        available: "1",
+    };
 
     await test(async () => {
         const response = await fetch("http://localhost:3001/api/products/create/", {
@@ -180,7 +177,6 @@ testCase(async () => {
         });
     }, "Fail To Create Product With Missing Data");
 
-
     await test(async () => {
         const largeSizeFilePath = path.join(BASE_DIR, "backend", "static", "images", "tests", "bigimage.png");
         const largeSizeFile = readFileSync(largeSizeFilePath);
@@ -204,10 +200,7 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 400);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Create Product With Image Over Size Limit");
 
     await test(async () => {
@@ -233,10 +226,7 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 400);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Create Product With Invalid Image File Format");
 
     await test(async () => {
@@ -265,21 +255,16 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 400);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        const errors: z.typeToFlattenedError<string> = await response.json();
+        assert.ok(errors.fieldErrors.hasOwnProperty('newImages'));
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Create Product With Too Many Images");
-
-
 
     //////////////
     /// EDIT
     ///
 
-
-    
-    const VALID_NEW_PRODUCT_DATA = {
+    const VALID_EDIT_PRODUCT_DATA = {
         name: "Admin One Ad #2 EDITED",
         description: "desc",
         price: "100",
@@ -288,6 +273,7 @@ testCase(async () => {
             ["building", "tall"],
             ["chicken", "coop"],
         ]),
+        available: "1",
     };
 
     await test(async () => {
@@ -297,7 +283,7 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
             },
-            body: objectToFormData(VALID_NEW_PRODUCT_DATA),
+            body: objectToFormData(VALID_EDIT_PRODUCT_DATA),
         });
 
         const data: DatabaseProduct = await response.json();
@@ -316,7 +302,7 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
                 Cookie: CUSTOMER_1_COOKIE,
             },
-            body: objectToFormData(VALID_NEW_PRODUCT_DATA),
+            body: objectToFormData(VALID_EDIT_PRODUCT_DATA),
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
@@ -324,10 +310,7 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 403);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Edit Product As Customer");
 
     await test(async () => {
@@ -336,7 +319,7 @@ testCase(async () => {
             headers: {
                 Origin: env.ORIGIN as string,
             },
-            body: objectToFormData(VALID_NEW_PRODUCT_DATA),
+            body: objectToFormData(VALID_EDIT_PRODUCT_DATA),
         });
 
         const product = await mysqlGetOrThrow<DatabaseProduct>(
@@ -344,16 +327,13 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 403);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Edit Product As Vistor");
 
     await test(async () => {
         const largeSizeFilePath = path.join(BASE_DIR, "backend", "static", "images", "tests", "bigimage.png");
         const largeSizeFile = readFileSync(largeSizeFilePath);
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
         sendData.append(
             "image-1",
             new Blob([largeSizeFile], { type: mime.lookup(largeSizeFilePath) || undefined }),
@@ -373,16 +353,13 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 400);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Edit Product With Image Over Size Limit");
 
     await test(async () => {
         const invalidFormatFilePath = path.join(BASE_DIR, "backend", "static", "images", "tests", "text_file.txt");
         const invalidFormatFile = readFileSync(invalidFormatFilePath);
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
         sendData.append(
             "image-1",
             new Blob([invalidFormatFile], { type: mime.lookup(invalidFormatFilePath) || undefined }),
@@ -402,17 +379,14 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 400);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Edit Product With Invalid Image File Format");
 
     await test(async () => {
         const validImagePath = path.join(BASE_DIR, "backend", "static", "images", "tests", "valid_image.jpg");
         const validFile = readFileSync(validImagePath);
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
-        for (let i = 0; i < PRODUCT.MAX_IMAGES_LENGTH; i++) {
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
+        for (let i = 0; i <= PRODUCT.MAX_IMAGES_LENGTH; i++) {
             sendData.append(
                 `image-${i}`,
                 new Blob([validFile], { type: mime.lookup(validImagePath) || undefined }),
@@ -434,16 +408,15 @@ testCase(async () => {
         );
 
         assert.strictEqual(response.status, 400);
-        assert.deepStrictEqual(
-            productSerializer.parse(products.ADMIN_1__PRODUCT_1),
-            productSerializer.parse(product),
-        );
+        const errors: z.typeToFlattenedError<string> = await response.json();
+        assert.ok(errors.fieldErrors.hasOwnProperty('newImages'));
+        assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Edit Product With Too Many Images");
 
     const createProductWithImage = async () => {
         const validImagePath = path.join(BASE_DIR, "backend", "static", "images", "tests", "valid_image.jpg");
         const validFile = readFileSync(validImagePath);
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
         sendData.append(
             "image-1",
             new Blob([validFile], { type: mime.lookup(validImagePath) || undefined }),
@@ -472,7 +445,7 @@ testCase(async () => {
 
     await test(async () => {
         const { savedImageDir, data } = await createProductWithImage();
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
         const response = await fetch(`http://localhost:3001/api/products/edit/${data.id}`, {
             method: "PUT",
             headers: {
@@ -489,7 +462,7 @@ testCase(async () => {
 
     await test(async () => {
         const { savedImageDir, data } = await createProductWithImage();
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
         data.images.forEach((image, i) => sendData.append(`image-${i}`, image));
         const response = await fetch(`http://localhost:3001/api/products/edit/${data.id}`, {
             method: "PUT",
@@ -508,7 +481,7 @@ testCase(async () => {
 
     await test(async () => {
         const { savedImageDir, data } = await createProductWithImage();
-        const sendData = objectToFormData(VALID_NEW_PRODUCT_DATA);
+        const sendData = objectToFormData(VALID_EDIT_PRODUCT_DATA);
         sendData.append("image-1", data.images[0]);
         sendData.append("image-2", "some_image_that_did_not_exist_on_the_product_beforehand.png");
         const response = await fetch(`http://localhost:3001/api/products/edit/${data.id}`, {
@@ -529,16 +502,13 @@ testCase(async () => {
     ///
 
     await test(async () => {
-        const response = await fetch(
-            `http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`,
-            {
-                method: "POST",
-                headers: {
-                    Origin: env.ORIGIN as string,
-                    Cookie: ADMIN_1_COOKIE,
-                },
+        const response = await fetch(`http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`, {
+            method: "POST",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: ADMIN_1_COOKIE,
             },
-        );
+        });
         const product = await mysqlGetOrNull<DatabaseProduct>(
             pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
@@ -550,16 +520,13 @@ testCase(async () => {
     }, "Delete Product As Admin");
 
     await test(async () => {
-        const response = await fetch(
-            `http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`,
-            {
-                method: "POST",
-                headers: {
-                    Origin: env.ORIGIN as string,
-                    Cookie: CUSTOMER_1_COOKIE,
-                },
+        const response = await fetch(`http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`, {
+            method: "POST",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: CUSTOMER_1_COOKIE,
             },
-        );
+        });
         const product = await mysqlGetOrNull<DatabaseProduct>(
             pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );
@@ -571,15 +538,12 @@ testCase(async () => {
     }, "Fail To Delete Product As Customer");
 
     await test(async () => {
-        const response = await fetch(
-            `http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`,
-            {
-                method: "POST",
-                headers: {
-                    Origin: env.ORIGIN as string,
-                },
+        const response = await fetch(`http://localhost:3001/api/products/delete/${products.ADMIN_1__PRODUCT_1.id}`, {
+            method: "POST",
+            headers: {
+                Origin: env.ORIGIN as string,
             },
-        );
+        });
         const product = await mysqlGetOrNull<DatabaseProduct>(
             pool.execute(`SELECT * FROM product WHERE id = ?`, [products.ADMIN_1__PRODUCT_1.id]),
         );

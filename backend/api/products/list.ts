@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { dbOperationWithRollback } from "../../backend/utils.js";
+import { dbOperation } from "../../backend/utils.js";
 import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { z } from "zod";
@@ -65,14 +65,14 @@ export default async function list(request: ExpectedRequest, response: Response)
 
     const filterStatement = filters.length === 0 ? "" : `WHERE ${filters.join(" AND ")}`;
 
-    const count = await dbOperationWithRollback(async (connection) => {
+    const count = await dbOperation(async (connection) => {
         const [countQuery] = await connection.execute<[{ total_count: number } & RowDataPacket]>(
             `SELECT COUNT(1) as total_count FROM product ${filterStatement}`,
         );
 
         return countQuery[0].total_count;
     });
-    const results = await dbOperationWithRollback(async (connection) => {
+    const results = await dbOperation(async (connection) => {
         const [productQuery] = await connection.execute<DatabaseProduct[]>(
             `SELECT * FROM product ${filterStatement} ORDER BY ${sortStatement} LIMIT ? OFFSET ?`,
             [PAGE_SIZE, PAGE_SIZE * (pageIndex - 1)],

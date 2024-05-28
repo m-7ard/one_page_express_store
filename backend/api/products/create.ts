@@ -7,7 +7,7 @@ import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { productSchema } from "../../backend/schemas.js";
 import { getImages } from "./_utils.js";
-import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperation, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { Product } from "../../backend/managers.js";
 
 const create = routeWithErrorHandling(async (request: Request, response: Response) => {
@@ -17,7 +17,7 @@ const create = routeWithErrorHandling(async (request: Request, response: Respons
         return;
     }
 
-    await dbOperationWithRollback(async (connection) => {
+    await dbOperation(async (connection) => {
         const { newImages, existingImages } = getImages(request);
         const validation = await productSchema
             .safeParseAsync({
@@ -32,9 +32,10 @@ const create = routeWithErrorHandling(async (request: Request, response: Respons
             const product = await mysqlGetOrThrow<DatabaseProduct>(
                 connection.execute(`SELECT * FROM product WHERE id = ?`, [id]),
             );
-            return response.status(201).json(productSerializer.parse(product));
+            response.status(201).json(productSerializer.parse(product));
+            return 
         } else {
-            response.status(400).send();
+            response.status(400).json(validation.error.flatten());
             return;
         }
     });

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Request, Response } from "express";
 import mysql from "mysql2/promise";
 import { DatabaseUser, pool } from "../../lib/db.js";
-import { dbOperationWithRollback, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperation, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
 import { Argon2id } from "oslo/password";
 import { generateId } from "lucia";
 import { lucia } from "../../lib/auth.js";
@@ -17,7 +17,7 @@ const schema = userSchema
     })
     .refine(
         async ({ username, password }) =>
-            await dbOperationWithRollback(async (connection) => {
+            await dbOperation(async (connection) => {
                 const [userQuery, fields] = await connection.execute<DatabaseUser[]>(
                     "SELECT * FROM user WHERE username = ?",
                     [username],
@@ -33,7 +33,7 @@ const schema = userSchema
     );
 
 const login = routeWithErrorHandling(async function login(request: Request, response: Response) {
-    await dbOperationWithRollback(async (connection) => {
+    await dbOperation(async (connection) => {
         if (response.locals.session) {
             const user = response.locals.user!;
             const cart = await mysqlGetOrThrow<DatabaseCart>(

@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { cartSerializer } from "../../backend/serializers.js";
-import { dbOperationWithRollback, mysqlGetOrThrow } from "../../backend/utils.js";
+import { dbOperation, mysqlGetOrThrow } from "../../backend/utils.js";
 import { DatabaseCart } from "../../backend/database_types.js";
 
 export default async function user(request: Request, response: Response, next: NextFunction) {
@@ -9,7 +9,7 @@ export default async function user(request: Request, response: Response, next: N
         return response.status(403).send();
     }
 
-    return await dbOperationWithRollback(async (connection) => {
+    return await dbOperation(async (connection) => {
         const cart = await mysqlGetOrThrow<DatabaseCart>(
             connection.execute("SELECT * FROM cart WHERE user_id = ?", [user.id]),
         );

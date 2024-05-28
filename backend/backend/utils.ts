@@ -1,36 +1,62 @@
 import mysql, { FieldPacket, RowDataPacket } from "mysql2/promise";
-import { getFromContext } from "./context.js";
+import { asyncLocalStorage, getFromContext } from "./context.js";
 import { NextFunction, Request, Response } from "express";
 import fsp from "fs/promises";
 import multer from "multer";
 
+export async function connectionProvider<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    let connection: mysql.PoolConnection | undefined;
+
+    try {
+        const pool = getFromContext("pool");
+        connection = await pool.getConnection();
+
+        if (connection == null) {
+            throw new Error("Failed to establish connection");
+        }
+        
+        console.log('conn id: ', connection.threadId)
+        return asyncLocalStorage.run(connection, callback, connection);
+    } finally {
+        connection?.release();
+    }
+}
+
+export async function dbOperation<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+    let connection = asyncLocalStorage.getStore();
+
+    if (connection == null) {
+        throw new Error('dbOperation must be used within connectionProvider');
+    } else {
+        console.log('dbOp conn id: ', connection.threadId)
+        return await callback(connection);
+    }
+}
+
 export async function dbOperationWithRollback<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
-    /*
+     /*
         NOTE: If you try to query data within callback with
         this function, you will receive old data, unless you
         call connection.rollback first within the callback
         manually
     */
-    let connection: mysql.PoolConnection | null = null;
+    let connection = asyncLocalStorage.getStore();
 
-    try {
-        const pool = getFromContext("pool");
-        connection = await pool.getConnection();
-        if (connection != null) {
-            await connection.beginTransaction();
-            try {
-                const result = await callback(connection);
-                await connection.commit();
-                return result;
-            } catch (error) {
-                await connection.rollback();
-                throw error;
-            }
+    if (connection == null) {
+        throw new Error('dbOperation must be used within connectionProvider');
+    } else {
+        console.log('dbOp rollback conn id: ', connection.threadId)
+        await connection.beginTransaction();
+
+        try {
+            const result = await callback(connection);
+            await connection.commit();
+            return result;
+        } catch (error) {
+            await connection.rollback();
+            console.log((await connection.query('SELECT * FROM _order WHERE id = 50'))[0])
+            throw error;
         }
-
-        throw new Error("Failed to establish connection");
-    } finally {
-        connection?.release();
     }
 }
 
@@ -123,7 +149,7 @@ export async function mysqlQueryTableByID<T extends RowDataPacket>({ table, id, 
     id: string | number;
     fields?: string | number
 }): Promise<T[]> {
-    return await dbOperationWithRollback(async (connection) => {
+    return await dbOperation(async (connection) => {
         return await mysqlGetQuery<T>(
             connection.execute(`SELECT ${fields} FROM ${table} WHERE id = ?`, [id])
         )

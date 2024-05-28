@@ -1,6 +1,6 @@
 import { ResultSetHeader, RowDataPacket } from "mysql2/promise";
 import { Request, Response } from "express";
-import { dbOperationWithRollback, mysqlGetOrThrow } from "../../backend/utils.js";
+import { dbOperation, mysqlGetOrThrow } from "../../backend/utils.js";
 import { rm } from "fs/promises";
 import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
@@ -11,7 +11,7 @@ export default async function drop(request: Request, response: Response) {
         return;
     }
 
-    return await dbOperationWithRollback(async (connection) => {
+    return await dbOperation(async (connection) => {
         const product = productSerializer.parse(
             await mysqlGetOrThrow<DatabaseProduct>(
                 connection.execute(`SELECT * FROM product WHERE id = ?`, [request.params.id]),

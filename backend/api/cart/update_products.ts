@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { DatabaseCartProduct } from "../../backend/database_types.js";
 import { cartProductSchema } from "../../backend/schemas.js";
-import { dbOperationWithRollback, mysqlGetQuery, routeWithErrorHandling } from "../../backend/utils.js";
+import { dbOperation, mysqlGetQuery, routeWithErrorHandling } from "../../backend/utils.js";
 import { CartProduct } from "../../backend/managers.js";
 import { z } from "zod";
 
@@ -12,7 +12,7 @@ const update_products = routeWithErrorHandling(async (request: Request, response
         return;
     }
 
-    return await dbOperationWithRollback(async (connection) => {
+    return await dbOperation(async (connection) => {
         const cartProducts = await mysqlGetQuery<DatabaseCartProduct>(
             connection.query(
                 `

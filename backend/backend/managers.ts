@@ -1,7 +1,8 @@
 import { ZodOptional, z } from "zod";
-import { DatabaseUser } from "./database_types.js";
-import { cartProductSchema, productSchema, userSchema } from "./schemas.js";
+import { DatabaseCartProduct, DatabaseProduct, DatabaseUser } from "./database_types.js";
+import { cartProductSchema, orderSchema, productSchema, userSchema } from "./schemas.js";
 import {
+    dbOperation,
     dbOperationWithRollback,
     mysqlGetOrThrow,
     mysqlGetQuery,
@@ -15,6 +16,7 @@ import { nanoid } from "nanoid";
 import { BASE_DIR } from "./settings.js";
 import { rm, writeFile } from "fs/promises";
 import { productSerializer } from "./serializers.js";
+import { getFromContext } from "./context.js";
 
 interface UserCreate extends z.output<typeof userSchema> {}
 
@@ -30,7 +32,8 @@ export const User = {
     create: async (data: UserCreate) => {
         const hashedPassword = await new Argon2id().hash(data.password);
         const userId = generateId(15);
-        await dbOperationWithRollback(async (connection) => {
+
+        await dbOperation(async (connection) => {
             const userInsert = await connection.execute<ResultSetHeader>({
                 sql: "INSERT INTO user (id, username, hashed_password, is_admin) VALUES (:id, :username, :hashed_password, :is_admin)",
                 values: {
@@ -50,36 +53,34 @@ export const User = {
     },
     update: async (data: UserUpdate) => {
         const hashedPassword = data.password == null ? null : await new Argon2id().hash(data.password);
+        const pool = getFromContext("pool");
 
-        await dbOperationWithRollback(async (connection) => {
-            await mysqlPrepareWithPlaceholders({
-                connection,
-                sql: `
-                    UPDATE user 
-                        SET
-                            username = IF(:username IS NULL, username, :username),
-                            hashed_password = IF(:hashed_password IS NULL, hashed_password, :hashed_password),
-                            is_admin = IF(:is_admin IS NULL, is_admin, :is_admin)
-                        WHERE
-                            id = :id
-                `,
-                values: {
-                    id: data.id,
-                    username: data.username ?? null,
-                    hashed_password: hashedPassword ?? null,
-                    is_admin: data.is_admin ?? null,
-                },
-            });
+        await pool.execute({
+            sql: `
+                UPDATE user 
+                    SET
+                        username = IF(:username IS NULL, username, :username),
+                        hashed_password = IF(:hashed_password IS NULL, hashed_password, :hashed_password),
+                        is_admin = IF(:is_admin IS NULL, is_admin, :is_admin)
+                    WHERE
+                        id = :id
+            `,
+            values: {
+                id: data.id,
+                username: data.username ?? null,
+                hashed_password: hashedPassword ?? null,
+                is_admin: data.is_admin ?? null,
+            },
+            namedPlaceholders: true,
         });
     },
     delete: async ({ id }: UserDelete) => {
-        await dbOperationWithRollback(async (connection) => {
-            await connection.execute(`DELETE FROM user WHERE id = ?`, [id]);
-        });
+        const pool = getFromContext("pool");
+        await pool.execute(`DELETE FROM user WHERE id = ?`, [id]);
     },
 };
 
-type ProductCreate = z.output<typeof productSchema>
+type ProductCreate = z.output<typeof productSchema>;
 
 interface ProductUpdate extends Partial<z.output<typeof productSchema>> {
     id: NonNullable<z.output<typeof productSchema.shape.id>>;
@@ -111,7 +112,7 @@ export const Product = {
 
         const fileNames = savedFileNames.sort((a, b) => a.index - b.index).map(({ fileName }) => fileName);
 
-        const { insertId } = await dbOperationWithRollback(async (connection) => {
+        return await dbOperation(async (connection) => {
             const [result] = await connection.execute<ResultSetHeader>({
                 sql: `
                     INSERT INTO product 
@@ -122,7 +123,8 @@ export const Product = {
                             kind = :kind,
                             specification = :specification,
                             images = :images,
-                            user_id = :user_id
+                            user_id = :user_id,
+                            available = :available
                 `,
                 values: {
                     name: data.name,
@@ -132,86 +134,84 @@ export const Product = {
                     specification: JSON.stringify(data.specification),
                     images: JSON.stringify(fileNames),
                     user_id: data.user_id,
+                    available: data.available,
                 },
                 namedPlaceholders: true,
             });
 
-            return result;
+            const { insertId } = result;
+            return insertId;
         });
-
-        return insertId;
     },
     update: async (data: ProductUpdate) => {
-        let fileNames: string[];
-        return await dbOperationWithRollback(async (connection) => {
-            if (data.existingImages != null) {
-                const oldProduct = productSerializer.parse(
-                    await mysqlGetOrThrow<DatabaseUser>(
-                        connection.execute(`SELECT * FROM product WHERE id = ?`, [data.id]),
-                    ),
-                );
-                const newExistingImages =
-                    data.existingImages == null
-                        ? oldProduct.images
-                        : data.existingImages.map(({ fileName }) => fileName);
-                const filesForDeletion = oldProduct.images.filter((fileName) => !newExistingImages.includes(fileName));
+        let fileNames: string[] | undefined;
+        const pool = getFromContext("pool");
+        if (data.existingImages != null) {
+            const oldProduct = productSerializer.parse(
+                await mysqlGetOrThrow<DatabaseUser>(pool.execute(`SELECT * FROM product WHERE id = ?`, [data.id])),
+            );
+            const newExistingImages =
+                data.existingImages == null ? oldProduct.images : data.existingImages.map(({ fileName }) => fileName);
+            const filesForDeletion = oldProduct.images.filter((fileName) => !newExistingImages.includes(fileName));
 
-                await Promise.all(
-                    filesForDeletion.map(async (image) => {
-                        try {
-                            await rm(`media/${image}`);
-                        } catch (error) {
-                            console.log(`Error trying to delete ${image}.`);
-                        }
-                    }),
-                );
+            await Promise.all(
+                filesForDeletion.map(async (image) => {
+                    try {
+                        await rm(`media/${image}`);
+                    } catch (error) {
+                        console.log(`Error trying to delete ${image}.`);
+                    }
+                }),
+            );
 
-                const savedFileNames =
-                    data.newImages == null
-                        ? []
-                        : await Promise.all(
-                              data.newImages.map(async ({ index, file }) => {
-                                  const id = nanoid();
-                                  const fileName = `${id}-${file.originalname}`;
-                                  await writeFile(`${BASE_DIR}/backend/media/${fileName}`, file.buffer);
-                                  return { index, fileName };
-                              }),
-                          );
+            const savedFileNames =
+                data.newImages == null
+                    ? []
+                    : await Promise.all(
+                          data.newImages.map(async ({ index, file }) => {
+                              const id = nanoid();
+                              const fileName = `${id}-${file.originalname}`;
+                              await writeFile(`${BASE_DIR}/backend/media/${fileName}`, file.buffer);
+                              return { index, fileName };
+                          }),
+                      );
 
-                fileNames = [...savedFileNames, ...data.existingImages]
-                    .sort((a, b) => a.index - b.index)
-                    .map(({ fileName }) => fileName);
-            }
+            fileNames = [...savedFileNames, ...data.existingImages]
+                .sort((a, b) => a.index - b.index)
+                .map(({ fileName }) => fileName);
+        }
 
-            const [result] = await connection.execute<ResultSetHeader>({
-                sql: `
-                    UPDATE product 
-                        SET
-                            name = IF (:name IS NULL, name, :name),
-                            description = IF (:description IS NULL, description, :description),
-                            price = IF (:price IS NULL, price, :price),
-                            kind = IF (:kind IS NULL, kind, :kind),
-                            specification = IF (:specification IS NULL, specification, :specification),
-                            images = IF (:images IS NULL, images, :images),
-                            user_id = IF (:user_id IS NULL, user_id, :user_id)
-                    WHERE
-                        id = :id
-                `,
-                values: {
-                    id: data.id,
-                    name: data.name ?? null,
-                    description: data.description ?? null,
-                    price: data.price ?? null,
-                    kind: data.kind ?? null,
-                    specification: data.specification == null ? null : JSON.stringify(data.specification),
-                    images: fileNames == null ? null : JSON.stringify(fileNames),
-                    user_id: data.user_id ?? null,
-                },
-                namedPlaceholders: true,
-            });
-
-            return result;
+        const [result] = await pool.execute<ResultSetHeader>({
+            sql: `
+                UPDATE product 
+                    SET
+                        name = IF (:name IS NULL, name, :name),
+                        description = IF (:description IS NULL, description, :description),
+                        price = IF (:price IS NULL, price, :price),
+                        kind = IF (:kind IS NULL, kind, :kind),
+                        specification = IF (:specification IS NULL, specification, :specification),
+                        images = IF (:images IS NULL, images, :images),
+                        user_id = IF (:user_id IS NULL, user_id, :user_id),
+                        available = IF (:available IS NULL, available, :available)
+                WHERE
+                    id = :id
+            `,
+            values: {
+                id: data.id,
+                name: data.name ?? null,
+                description: data.description ?? null,
+                price: data.price ?? null,
+                kind: data.kind ?? null,
+                specification: data.specification == null ? null : JSON.stringify(data.specification),
+                images: fileNames == null ? null : JSON.stringify(fileNames),
+                user_id: data.user_id ?? null,
+                available: data.available ?? null,
+            },
+            namedPlaceholders: true,
         });
+
+        const { insertId } = result;
+        return insertId;
     },
 };
 
@@ -225,7 +225,7 @@ interface CartProductDelete extends Partial<z.output<typeof cartProductSchema>> 
 
 export const CartProduct = {
     create: async (data: CartProductCreate) => {
-        const { insertId } = await dbOperationWithRollback(async (connection) => {
+        return await dbOperation(async (connection) => {
             const [result] = await connection.execute<ResultSetHeader>({
                 sql: "INSERT INTO cart_product (product_id, cart_id, amount) VALUES (:product_id, :cart_id, :amount)",
                 values: {
@@ -236,33 +236,111 @@ export const CartProduct = {
                 namedPlaceholders: true,
             });
 
-            return result;
+            const { insertId } = result;
+            return insertId;
         });
-        return insertId;
     },
     update: async (data: CartProductUpdate) => {
-        return await dbOperationWithRollback(async (connection) => {
+        const pool = getFromContext("pool");
+        const [result] = await pool.execute<ResultSetHeader>({
+            sql: `
+                UPDATE cart_product 
+                    SET
+                        amount = IF (:amount IS NULL, amount, :amount)
+                WHERE
+                    id = :id
+            `,
+            values: {
+                id: data.id,
+                amount: data.amount ?? null,
+            },
+            namedPlaceholders: true,
+        });
+
+        const { insertId } = result;
+        return insertId;
+    },
+    delete: async (data: CartProductDelete) => {
+        const pool = getFromContext("pool");
+        const [result] = await pool.execute<ResultSetHeader>(`DELETE FROM cart_product WHERE id = ?`, [data.id]);
+        const { affectedRows } = result;
+        return affectedRows;
+    },
+};
+
+interface OrderCreate extends z.output<typeof orderSchema> {
+    user_id: NonNullable<z.output<typeof orderSchema.shape.user_id>>;
+    product_id: NonNullable<z.output<typeof orderSchema.shape.product_id>>;
+}
+interface OrderUpdate extends Partial<z.output<typeof orderSchema>> {
+    id: NonNullable<z.output<typeof orderSchema.shape.id>>;
+}
+interface OrderDelete extends Partial<z.output<typeof orderSchema>> {
+    id: NonNullable<z.output<typeof orderSchema.shape.id>>;
+}
+
+export const Order = {
+    create: async (data: OrderCreate) => {
+        const { insertId } = await dbOperationWithRollback(async (connection) => {
+            const product = await mysqlGetOrThrow<DatabaseProduct>(
+                connection.execute(`SELECT * FROM product WHERE id = ?`, [data.product_id]),
+            );
+            const cartProduct = await mysqlGetOrThrow<DatabaseCartProduct>(
+                connection.execute(
+                    `
+                    SELECT cart_product.* 
+                        FROM 
+                            cart LEFT JOIN cart_product 
+                        ON 
+                            cart.id = cart_product.cart_id
+                    WHERE 
+                        cart.user_id = ? AND
+                        cart_product.product_id = ?
+                    `,
+                    [data.user_id, data.product_id],
+                ),
+            );
+
             const [result] = await connection.execute<ResultSetHeader>({
                 sql: `
-                    UPDATE cart_product 
+                    INSERT INTO _order 
                         SET
-                            amount = IF (:amount IS NULL, amount, :amount)
-                    WHERE
-                        id = :id
+                            user_id = :user_id,
+                            product_id = :product_id,
+                            amount = :amount,
+                            date_created = NOW(),
+                            archive = :archive,
+                            shipping_name = :shipping_name,
+                            shipping_address_primary = :shipping_address_primary,
+                            shipping_address_secondary = :shipping_address_secondary,
+                            shipping_city = :shipping_city,
+                            shipping_state = :shipping_state,
+                            shipping_zip = :shipping_zip,
+                            shipping_country = :shipping_country,
+                            status = :status
                 `,
                 values: {
-                    id: data.id,
-                    amount: data.amount ?? null,
+                    user_id: data.user_id,
+                    product_id: data.product_id,
+                    amount: data.amount,
+                    archive: JSON.stringify({
+                        product: productSerializer.parse(product),
+                    }),
+                    shipping_name: data.shipping_name,
+                    shipping_address_primary: data.shipping_address_primary,
+                    shipping_address_secondary: data.shipping_address_secondary,
+                    shipping_city: data.shipping_city,
+                    shipping_state: data.shipping_state,
+                    shipping_zip: data.shipping_zip,
+                    shipping_country: data.shipping_country,
+                    status: data.status,
                 },
                 namedPlaceholders: true,
             });
-
+            await CartProduct.delete(cartProduct);
             return result;
         });
-    },
-    delete: async (data: CartProductDelete) => {
-        await dbOperationWithRollback(async (connection) => {
-            await connection.execute(`DELETE FROM cart_product WHERE id = ?`, [data.id]);
-        });
+
+        return insertId;
     },
 };

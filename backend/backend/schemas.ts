@@ -144,7 +144,7 @@ export const orderSchema = z.object({
     id: z.coerce
         .number()
         .min(1)
-        .refine(async (value) => (await mysqlQueryTableByID({ table: "order", id: value, fields: 1 })).length !== 0, {
+        .refine(async (value) => (await mysqlQueryTableByID({ table: "_order", id: value, fields: 1 })).length !== 0, {
             message: "Cart Product does not exist.",
         })
         .optional(),
@@ -173,5 +173,5 @@ export const orderSchema = z.object({
     shipping_state: z.string().min(1).max(100),
     shipping_zip: z.string().min(1).max(50),
     shipping_country: z.string().min(1).max(100),
-    status: z.enum(["pending", "shipping", "completed", "canceled", "refunded"]).default("pending"),
+    status: z.enum(["pending", "shipping", "completed", "presumed_completed", "canceled", "refunded"]).default("pending"),
 });

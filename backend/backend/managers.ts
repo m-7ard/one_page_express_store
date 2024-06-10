@@ -8,6 +8,7 @@ import {
     mysqlGetQuery,
     mysqlPrepareWithPlaceholders,
     mysqlQueryTableByID,
+    sqlEqualIfNullShortcut,
 } from "./utils.js";
 import { ResultSetHeader } from "mysql2";
 import { Argon2id } from "oslo/password";
@@ -52,26 +53,29 @@ export const User = {
         return userId;
     },
     update: async (data: UserUpdate) => {
-        const hashedPassword = data.password == null ? null : await new Argon2id().hash(data.password);
-        const pool = getFromContext("pool");
+        return await dbOperation(async (connection) => {
+            const hashedPassword = data.password == null ? null : await new Argon2id().hash(data.password);
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: `
+                    UPDATE user 
+                        SET
+                            username = IF(:username IS NULL, username, :username),
+                            hashed_password = IF(:hashed_password IS NULL, hashed_password, :hashed_password),
+                            is_admin = IF(:is_admin IS NULL, is_admin, :is_admin)
+                        WHERE
+                            id = :id
+                `,
+                values: {
+                    id: data.id,
+                    username: data.username ?? null,
+                    hashed_password: hashedPassword ?? null,
+                    is_admin: data.is_admin ?? null,
+                },
+                namedPlaceholders: true,
+            });
 
-        await pool.execute({
-            sql: `
-                UPDATE user 
-                    SET
-                        username = IF(:username IS NULL, username, :username),
-                        hashed_password = IF(:hashed_password IS NULL, hashed_password, :hashed_password),
-                        is_admin = IF(:is_admin IS NULL, is_admin, :is_admin)
-                    WHERE
-                        id = :id
-            `,
-            values: {
-                id: data.id,
-                username: data.username ?? null,
-                hashed_password: hashedPassword ?? null,
-                is_admin: data.is_admin ?? null,
-            },
-            namedPlaceholders: true,
+            const { affectedRows } = result;
+            return affectedRows;
         });
     },
     delete: async ({ id }: UserDelete) => {
@@ -210,8 +214,8 @@ export const Product = {
             namedPlaceholders: true,
         });
 
-        const { insertId } = result;
-        return insertId;
+        const { affectedRows } = result;
+        return affectedRows;
     },
 };
 
@@ -241,24 +245,25 @@ export const CartProduct = {
         });
     },
     update: async (data: CartProductUpdate) => {
-        const pool = getFromContext("pool");
-        const [result] = await pool.execute<ResultSetHeader>({
-            sql: `
+        return dbOperation(async (connection) => {
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: `
                 UPDATE cart_product 
                     SET
                         amount = IF (:amount IS NULL, amount, :amount)
                 WHERE
                     id = :id
             `,
-            values: {
-                id: data.id,
-                amount: data.amount ?? null,
-            },
-            namedPlaceholders: true,
-        });
+                values: {
+                    id: data.id,
+                    amount: data.amount ?? null,
+                },
+                namedPlaceholders: true,
+            });
 
-        const { insertId } = result;
-        return insertId;
+            const { affectedRows } = result;
+            return affectedRows;
+        });
     },
     delete: async (data: CartProductDelete) => {
         const pool = getFromContext("pool");
@@ -342,5 +347,41 @@ export const Order = {
         });
 
         return insertId;
+    },
+    update: async (data: OrderUpdate) => {
+        const setArgs = {
+            user_id: data.user_id ?? null,
+            product_id: data.product_id ?? null,
+            amount: data.amount ?? null,
+            date_created: data.date_created ?? null,
+            shipping_name: data.shipping_name ?? null,
+            shipping_address_primary: data.shipping_address_primary ?? null,
+            shipping_address_secondary: data.shipping_address_secondary ?? null,
+            shipping_city: data.shipping_city ?? null,
+            shipping_state: data.shipping_state ?? null,
+            shipping_zip: data.shipping_zip ?? null,
+            shipping_country: data.shipping_country ?? null,
+            status: data.status ?? null,
+        };
+
+        return dbOperation(async (connection) => {
+            const [result] = await connection.execute<ResultSetHeader>({
+                sql: `
+                    UPDATE _order 
+                        SET
+                            ${Object.keys(setArgs).map(sqlEqualIfNullShortcut).join(", ")}
+                    WHERE
+                        id = :id
+                `,
+                values: {
+                    id: data.id,
+                    ...setArgs,
+                },
+                namedPlaceholders: true,
+            });
+
+            const { affectedRows } = result;
+            return affectedRows;
+        });
     },
 };

@@ -38,7 +38,8 @@ const edit = routeWithErrorHandling(async (request: Request, response: Response)
             user_id: user.id,
         });
     if (!validation.success) {
-        return response.status(400).json(validation.error.flatten());
+        response.status(400).json(validation.error.flatten());
+        return;
     }
 
     await Product.update(validation.data);

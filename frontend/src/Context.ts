@@ -28,7 +28,7 @@ export const [AbstractDialogContext, useAbstractDialogContext] = createUseContex
 
 export const [QueryStringContext, useQueryStringContext] = createUseContext<{
     filterParams: React.MutableRefObject<Record<string, string>>;
-    sortParams: React.MutableRefObject<Record<string, string>>;
+    sortParams: React.MutableRefObject<{ sort?: string }>;
     page_index: React.MutableRefObject<number>;
     buildQueryString: () => string;
 }>("useQueryStringContext has to be used within <QueryStringContext.Provider>");
@@ -36,11 +36,3 @@ export const [QueryStringContext, useQueryStringContext] = createUseContext<{
 export const [ProductContext, useProductContext] = createUseContext<ProductType>(
     "useProductContext has to be used within <ProductContext.Provider>",
 );
-
-export const [UserCartContext, useUserCartContext] = createUseContext<{
-    updateCartProductsUpdateData: ({ id, ...data }: Pick<CartProductType, "amount" | "id">) => void;
-    errors: Record<number, FormErrors> | undefined;
-    setCartProductUpdate: React.Dispatch<React.SetStateAction<Record<number, Pick<CartProductType, "amount">>>>;
-    cartProductsCheckout: CartProductType[];
-    setCartProductsCheckout: React.Dispatch<React.SetStateAction<CartProductType[]>>;
-}>("useUserCartContext has to be used within <UserCartContext.Provider>");

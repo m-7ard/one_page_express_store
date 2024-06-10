@@ -1,18 +1,12 @@
-import { ResultSetHeader } from "mysql2/promise";
-import { NextFunction, Request, Response } from "express";
-import { nanoid } from "nanoid";
-import { writeFile } from "fs/promises";
-import { BASE_DIR } from "../../backend/settings.js";
-import { DatabaseCart, DatabaseCartProduct, DatabaseOrder, DatabaseProduct } from "../../backend/database_types.js";
+import { Request, Response } from "express";
+import { DatabaseCartProduct, DatabaseOrder } from "../../backend/database_types.js";
 import {
-    cartProductSerializer,
     cartSerializer,
     orderSerializer,
-    productSerializer,
 } from "../../backend/serializers.js";
-import { cartProductSchema, orderSchema, productSchema } from "../../backend/schemas.js";
-import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, routeWithErrorHandling } from "../../backend/utils.js";
-import { Order, Product } from "../../backend/managers.js";
+import { cartProductSchema, orderSchema } from "../../backend/schemas.js";
+import { dbOperation, mysqlGetQuery, routeWithErrorHandling } from "../../backend/utils.js";
+import { Order } from "../../backend/managers.js";
 import { z } from "zod";
 
 const checkout = routeWithErrorHandling(async (request: Request, response: Response) => {
@@ -93,14 +87,9 @@ const checkout = routeWithErrorHandling(async (request: Request, response: Respo
                     });
                 }),
             );
-            console.log(insertIds);
             const orders = await mysqlGetQuery<DatabaseOrder>(
-                connection.execute(`SELECT * FROM _order WHERE JSON_CONTAINS(?, id, '$') = 1`, [
-                    JSON.stringify([insertIds[0]]),
-                ]),
+                connection.query(`SELECT * FROM _order WHERE id IN (${insertIds.join(', ')})`),
             );
-            console.log(orders, insertIds);
-
             response.status(201).json(z.array(orderSerializer).parse(orders));
         }
     });

@@ -1,13 +1,12 @@
-import { useQueryClient } from "@tanstack/react-query";
-import App from "../Frontpage";
-import { PaginatedQuery, ProductType } from "../../../../../../Types";
+import { QueryKey, useQueryClient } from "@tanstack/react-query";
+import { PaginatedQuery } from "../../../../../../Types";
 import { UncontrolledGenericListbox } from "../../../../../elements/widgets/GenericListbox/UncontrolledGenericListbox";
 import { useQueryStringContext } from "../../../../../../Context";
 
-export function PageNavigation() {
+export function PageNavigation({ queryKey }: { queryKey: QueryKey }) {
     const { page_index } = useQueryStringContext();
     const queryClient = useQueryClient();
-    const productsQuery = queryClient.getQueryData<PaginatedQuery<ProductType>>(["products"])!;
+    const query = queryClient.getQueryData<PaginatedQuery<Record<string, unknown>[]>>(queryKey)!;
 
     return (
         <div className="flex gap-2 justify-between items-center">
@@ -16,13 +15,13 @@ export function PageNavigation() {
                     mixin-button-like
                     mixin-button-base
                     theme-button-generic-white
-                    ${productsQuery.previousPage == null && 'contrast-75 cursor-not-allowed'}
+                    ${query.previousPage == null && "contrast-75 cursor-not-allowed"}
                 `}
                 onClick={() => {
-                    if (productsQuery.previousPage == null) {
+                    if (query.previousPage == null) {
                         return;
                     }
-                    page_index.current = productsQuery.previousPage;
+                    page_index.current = query.previousPage;
                     queryClient.invalidateQueries({ queryKey: ["products"] });
                 }}
             >
@@ -34,7 +33,7 @@ export function PageNavigation() {
                     name="page_index"
                     value={page_index.current.toString()}
                     choices={Array.from({
-                        length: Math.floor(productsQuery.count / 24) + 1,
+                        length: Math.floor(query.count / 24) + 1,
                     }).map((_, i) => {
                         return { value: `${i + 1}`, label: `${i + 1}` };
                     })}
@@ -54,13 +53,13 @@ export function PageNavigation() {
                     mixin-button-like
                     mixin-button-base
                     theme-button-generic-white
-                    ${productsQuery.nextPage == null && 'contrast-75 cursor-not-allowed'}
+                    ${query.nextPage == null && "contrast-75 cursor-not-allowed"}
                 `}
                 onClick={() => {
-                    if (productsQuery.nextPage == null) {
+                    if (query.nextPage == null) {
                         return;
                     }
-                    page_index.current = productsQuery.nextPage;
+                    page_index.current = query.nextPage;
                     queryClient.invalidateQueries({ queryKey: ["products"] });
                 }}
             >

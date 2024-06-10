@@ -1,6 +1,7 @@
 import { Listbox } from "@headlessui/react";
 import { useState } from "react";
 import { usePopper } from "react-popper-2";
+import { Choice, Value } from "./types";
 
 interface DefaultGenericListboxInterface {
     placeholder?: string;
@@ -9,12 +10,6 @@ interface DefaultGenericListboxInterface {
     currentValue?: Value;
     parentProps: React.ComponentProps<typeof Listbox>;
 }
-
-type Value = string;
-type Choice = {
-    value: Value;
-    label: Value;
-};
 
 const getChoice = ({ choices, value }: { choices: Choice[]; value?: Value }) => {
     if (value == null) {
@@ -67,10 +62,21 @@ export default function DefaultGenericListbox({
             <Listbox.Options
                 className={"theme-group-listbox-generic-white__menu"}
                 ref={setPopperElement}
-                style={{ ...popper.styles.popper, width: `${referenceElement?.offsetWidth}px` }}
+                style={{ ...popper.styles.popper, width: `${referenceElement?.offsetWidth}px`, zIndex: 5000 }}
                 {...popper.attributes.popper}
             >
-                {nullable && <Listbox.Option value={undefined}>{placeholder}</Listbox.Option>}
+                {nullable && (
+                    <Listbox.Option
+                        value={undefined}
+                        className={`
+                            mixin-button-base
+                            theme-group-listbox-generic-white__item
+                            ${currentValue === undefined && 'theme-group-listbox-generic-white__item--active'}
+                        `}
+                    >
+                        {placeholder}
+                    </Listbox.Option>
+                )}
                 {choices.map((choice, i) => (
                     <Listbox.Option
                         key={i}
@@ -78,6 +84,7 @@ export default function DefaultGenericListbox({
                         className={`
                             mixin-button-base
                             theme-group-listbox-generic-white__item
+                            ${currentValue === choice.value && 'theme-group-listbox-generic-white__item--active'}
                         `}
                     >
                         {choice.label}

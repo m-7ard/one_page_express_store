@@ -1,4 +1,4 @@
-import { blueText, dbOperation, greenText, mysqlGetOrThrow, mysqlQueryTableByID, redText } from "../backend/utils.js";
+import { blueText, connectionProvider, dbOperation, greenText, mysqlGetOrThrow, mysqlQueryTableByID, redText } from "../backend/utils.js";
 import mysql, { ResultSetHeader } from "mysql2/promise";
 import { env } from "process";
 import context, { getFromContext } from "../backend/context.js";
@@ -72,7 +72,9 @@ export async function testCase<T>(callback: () => Promise<T>): Promise<T> {
                     must be called in the express routes 
                 */
 
-                return await callback();
+                return await connectionProvider(async () => {
+                    return await callback();
+                })
             } finally {
                 await connection.query(`DROP DATABASE one_page_store_testing`);
             }

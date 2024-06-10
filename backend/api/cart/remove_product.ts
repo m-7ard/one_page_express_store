@@ -11,7 +11,7 @@ const remove_product = routeWithErrorHandling(async (request: Request, response:
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    await dbOperation(async (connection) => {
         const cartProduct = await mysqlGetOrNull<DatabaseCartProduct>(
             connection.execute(
                 `

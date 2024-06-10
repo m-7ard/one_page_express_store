@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { dbOperation } from "../../backend/utils.js";
+import { dbOperation, routeWithErrorHandling } from "../../backend/utils.js";
 import { DatabaseProduct } from "../../backend/database_types.js";
 import { productSerializer } from "../../backend/serializers.js";
 import { z } from "zod";
@@ -14,7 +14,8 @@ interface ExpectedRequest extends Request {
 }
 
 const PAGE_SIZE = 24;
-const STATIC_QUERY_MAPPING: Record<string, z.ZodEffects<any, string, any>> = {
+
+const STATIC_FILTER_MAPPING: Record<string, z.ZodEffects<any, string, any>> = {
     min_price: z.coerce
         .number()
         .min(1)
@@ -36,23 +37,20 @@ const SORT_MAPPING = {
     name: "name ASC",
 };
 
-export default async function list(request: ExpectedRequest, response: Response) {
-    const { sort, page_index, ...requestQuery } = request.query;
+const parseQueryParams = (query: ExpectedRequest["query"]) => {
+    const { sort, page_index, ...filters } = query;
     const pageIndex = parseInt(page_index ?? "1");
-    let sortStatement;
-    if (sort == null) {
-        sortStatement = "id DESC";
-    } else {
-        sortStatement = SORT_MAPPING[sort] ?? "id DESC";
-    }
+    const sortStatement = sort == null ? "id DESC" : SORT_MAPPING[sort] ?? "id DESC";
 
-    let queryParams = Object.entries(requestQuery).map(([key, value]) => ({ key, value }));
-    queryParams = [...queryParams.filter(({ key, value }) => value !== "")];
+    return { filters, pageIndex, sortStatement };
+};
 
-    const filters = queryParams.reduce<string[]>((acc, { key, value }) => {
-        if (STATIC_QUERY_MAPPING.hasOwnProperty(key)) {
+const buildFilterStatement = (filters: Record<string, string | undefined>) => {
+    const queryParams = Object.entries(filters).filter(([_, value]) => value !== "");
+    const filterStatements = queryParams.reduce<string[]>((acc, [key, value]) => {
+        if (STATIC_FILTER_MAPPING.hasOwnProperty(key)) {
             try {
-                const statement = STATIC_QUERY_MAPPING[key].parse(value);
+                const statement = STATIC_FILTER_MAPPING[key].parse(value);
                 acc.push(statement);
             } catch {
                 return acc;
@@ -63,27 +61,44 @@ export default async function list(request: ExpectedRequest, response: Response)
         return acc;
     }, []);
 
-    const filterStatement = filters.length === 0 ? "" : `WHERE ${filters.join(" AND ")}`;
+    return filterStatements.length ? `WHERE ${filterStatements.join(" AND ")}` : "";
+};
 
-    const count = await dbOperation(async (connection) => {
+const getCount = async (filterStatement: string) => {
+    return await dbOperation(async (connection) => {
         const [countQuery] = await connection.execute<[{ total_count: number } & RowDataPacket]>(
             `SELECT COUNT(1) as total_count FROM product ${filterStatement}`,
         );
-
         return countQuery[0].total_count;
     });
-    const results = await dbOperation(async (connection) => {
+};
+
+const getProducts = async (filterStatement: string, sortStatement: string, pageIndex: number) => {
+    return await dbOperation(async (connection) => {
         const [productQuery] = await connection.execute<DatabaseProduct[]>(
             `SELECT * FROM product ${filterStatement} ORDER BY ${sortStatement} LIMIT ? OFFSET ?`,
             [PAGE_SIZE, PAGE_SIZE * (pageIndex - 1)],
         );
         return productQuery;
     });
+};
+
+const list = routeWithErrorHandling(async (request: Request, response: Response) => {
+    const { filters, pageIndex, sortStatement } = parseQueryParams((request as ExpectedRequest).query);
+    const filterStatement = buildFilterStatement(filters);
+
+    const [count, products] = await Promise.all([
+        getCount(filterStatement),
+        getProducts(filterStatement, sortStatement, pageIndex)
+    ]);
 
     response.status(200).json({
-        results: z.array(productSerializer).parse(results),
+        results: z.array(productSerializer).parse(products),
         count,
         nextPage: PAGE_SIZE * pageIndex < count ? pageIndex + 1 : null,
         previousPage: pageIndex - 1 > 0 ? pageIndex - 1 : null,
     });
-}
+});
+
+
+export default list;

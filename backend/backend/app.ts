@@ -5,21 +5,14 @@ import { router as APIrouter } from "../api/index.js";
 import path from "path";
 import { BASE_DIR } from "./settings.js";
 import filters from "../filters.json" assert { type: "json" };
-import { connectionProvider } from "./utils.js";
+import { connectionProvider, dbOperation } from "./utils.js";
+import { asyncLocalStorage } from "./context.js";
 
 export async function setUpApp() {
     const app = express();
     const port = 3001;
     const router = express.Router();
     const { lucia } = await import("../lib/auth.js");
-
-    // DB Connection Provider
-    app.use(async (req, res, next) => {
-        await connectionProvider(async () => {
-            console.log('provider reached')
-            return next();
-        });
-    });
 
     // Lucia Auth
     app.use(async (req, res, next) => {

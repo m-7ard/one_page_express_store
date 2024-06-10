@@ -1,8 +1,8 @@
 import { useState } from "react";
 import DefaultGenericListbox from "./DefaultGenericListbox";
-import { Choice, Value } from "./units";
+import { Choice, Value } from "./types";
 
-export function UncontrolledGenericListbox({
+export function ControlledGenericListbox({
     name,
     initial,
     choices,
@@ -27,7 +27,7 @@ export function UncontrolledGenericListbox({
             nullable={nullable}
             parentProps={{
                 name,
-                value: currentValue,
+                defaultValue: currentValue,
                 onChange: (value: Value) => {
                     setCurrentValue(value);
                     if (onChange == null) {
@@ -35,7 +35,7 @@ export function UncontrolledGenericListbox({
                     }
 
                     onChange(value);
-                }
+                },
             }}
         />
     );

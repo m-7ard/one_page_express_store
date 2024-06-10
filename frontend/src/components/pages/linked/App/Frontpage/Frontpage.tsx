@@ -1,39 +1,19 @@
 import { AdjustmentsHorizontalIcon, ArrowDownIcon, ChevronUpDownIcon, PlusIcon } from "@heroicons/react/24/solid";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import React, { useCallback, useRef } from "react";
 import { QueryStringContext, useAppContext, useQueryStringContext } from "../../../../../Context";
-import { PaginatedQuery, ProductType, UserType } from "../../../../../Types";
+import { PaginatedQuery, ProductType } from "../../../../../Types";
 import FilterProductsDialog from "../../../unlinked/FilterProductsDialog";
 import CreateProductDialog from "../../../unlinked/CreateProductDialog";
 import Product from "./Product/Product";
 import { Popover } from "@headlessui/react";
-import SortProductsPopover from "../../../../blocks/Frontpage/Product/SortProductsPopover";
+import SortProductsPopover from "../../../unlinked/SortProductsPopover";
 import { PageNavigation } from "./PageNavigation/PageNavigation";
-import App from "../App";
-
-export function QueryStringProvider({ children }: React.PropsWithChildren) {
-    const filterParams = useRef<Record<string, string>>({});
-    const sortParams = useRef<Record<string, string>>({});
-    const page_index = useRef(1);
-    const buildQueryString = () =>
-        new URLSearchParams({
-            ...sortParams.current,
-            ...filterParams.current,
-            page_index: `${page_index.current}`,
-        }).toString();
-
-    return (
-        <QueryStringContext.Provider value={{ filterParams, sortParams, page_index, buildQueryString }}>
-            {children}
-        </QueryStringContext.Provider>
-    );
-}
 
 export default function Frontpage() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const scrollToShop = useCallback(() => scrollRef.current?.scrollIntoView(), []);
     const { buildQueryString } = useQueryStringContext();
-    const queryClient = useQueryClient();
 
     const productsQuery = useQuery<PaginatedQuery<ProductType>>({
         queryKey: ["products"],
@@ -146,7 +126,7 @@ export default function Frontpage() {
                                 },
                             )}
                         </div>
-                        <PageNavigation />
+                        <PageNavigation queryKey={["products"]} />
                     </div>
                 </div>
             </div>

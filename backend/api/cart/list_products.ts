@@ -14,7 +14,7 @@ const list_products = routeWithErrorHandling(async (request: Request, response: 
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    await dbOperation(async (connection) => {
         const cart = await mysqlGetOrThrow<DatabaseCart>(
             connection.execute("SELECT * FROM cart WHERE user_id = ?", [user.id]),
         );

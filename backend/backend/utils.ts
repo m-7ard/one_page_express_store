@@ -3,6 +3,8 @@ import { asyncLocalStorage, getFromContext } from "./context.js";
 import { NextFunction, Request, Response } from "express";
 import fsp from "fs/promises";
 import multer from "multer";
+import { z } from "zod";
+import sql, { Sql, join, raw } from "sql-template-tag";
 
 export async function connectionProvider<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     let connection: mysql.PoolConnection | undefined;
@@ -14,27 +16,27 @@ export async function connectionProvider<T>(callback: (connection: mysql.PoolCon
         if (connection == null) {
             throw new Error("Failed to establish connection");
         }
-        
-        console.log('conn id: ', connection.threadId)
-        return asyncLocalStorage.run(connection, callback, connection);
+
+        return await asyncLocalStorage.run(connection, callback, connection);
     } finally {
         connection?.release();
     }
 }
 
-export async function dbOperation<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
+export function dbOperation<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
     let connection = asyncLocalStorage.getStore();
 
     if (connection == null) {
-        throw new Error('dbOperation must be used within connectionProvider');
+        throw new Error("dbOperation must be used within connectionProvider");
     } else {
-        console.log('dbOp conn id: ', connection.threadId)
-        return await callback(connection);
+        return callback(connection);
     }
 }
 
-export async function dbOperationWithRollback<T>(callback: (connection: mysql.PoolConnection) => Promise<T>): Promise<T> {
-     /*
+export async function dbOperationWithRollback<T>(
+    callback: (connection: mysql.PoolConnection) => Promise<T>,
+): Promise<T> {
+    /*
         NOTE: If you try to query data within callback with
         this function, you will receive old data, unless you
         call connection.rollback first within the callback
@@ -43,9 +45,8 @@ export async function dbOperationWithRollback<T>(callback: (connection: mysql.Po
     let connection = asyncLocalStorage.getStore();
 
     if (connection == null) {
-        throw new Error('dbOperation must be used within connectionProvider');
+        throw new Error("dbOperation must be used within connectionProvider");
     } else {
-        console.log('dbOp rollback conn id: ', connection.threadId)
         await connection.beginTransaction();
 
         try {
@@ -54,7 +55,6 @@ export async function dbOperationWithRollback<T>(callback: (connection: mysql.Po
             return result;
         } catch (error) {
             await connection.rollback();
-            console.log((await connection.query('SELECT * FROM _order WHERE id = 50'))[0])
             throw error;
         }
     }
@@ -98,7 +98,9 @@ export function routeWithErrorHandling(
 ) {
     return async (request: Request, response: Response, next: NextFunction) => {
         try {
-            await callback(request, response, next);
+            return await connectionProvider(async () => {
+                await callback(request, response, next);
+            });
         } catch (error) {
             if (error instanceof multer.MulterError) {
                 response.status(500).send(error.message);
@@ -144,14 +146,93 @@ export function mysqlPrepareWithPlaceholders({
     });
 }
 
-export async function mysqlQueryTableByID<T extends RowDataPacket>({ table, id, fields = '*' }: {
+export async function mysqlQueryTableByID<T extends RowDataPacket>({
+    table,
+    id,
+    fields = "*",
+}: {
     table: string;
     id: string | number;
-    fields?: string | number
+    fields?: string | number;
 }): Promise<T[]> {
     return await dbOperation(async (connection) => {
-        return await mysqlGetQuery<T>(
-            connection.execute(`SELECT ${fields} FROM ${table} WHERE id = ?`, [id])
-        )
-    })
+        return await mysqlGetQuery<T>(connection.execute(`SELECT ${fields} FROM ${table} WHERE id = ?`, [id]));
+    });
 }
+
+export function getFilterStatement({
+    filters,
+    filterMapping,
+}: {
+    filters: Record<string, string>;
+    filterMapping: Record<string, z.ZodEffects<any, Sql, any>>;
+}) {
+    const filterStatements = Object.entries(filters).reduce<Sql[]>((acc, [key, value]) => {
+        if (filterMapping.hasOwnProperty(key)) {
+            try {
+                const statement = filterMapping[key].parse(value);
+                acc.push(statement);
+            } catch {
+                return acc;
+            }
+        }
+        return acc;
+    }, []);
+
+    return filterStatements.length === 0 ? raw("") : join(filterStatements, " AND ", "WHERE ");
+}
+
+export function getSortStatement<T extends Record<string, string>>({
+    sort,
+    sortMapping,
+    defaultSort,
+}: {
+    sort?: string;
+    sortMapping: T;
+    defaultSort: keyof T;
+}) {
+    if (sort == null) {
+        return sql`ORDER BY ${defaultSort}`;
+    }
+
+    return sql`ORDER BY ${sortMapping[sort] ?? defaultSort}`;
+}
+
+export async function getPaginatedQuery<T extends RowDataPacket>({
+    prefix,
+    queryString,
+    queryArgs,
+    pageSize,
+    pageIndex,
+}: {
+    prefix: (fields?: string) => string;
+    queryString: string;
+    queryArgs: unknown[];
+    pageSize: number;
+    pageIndex: number;
+}) {
+    return await dbOperation(async (connection) => {
+        const resultQuery = await mysqlGetQuery<T>(
+            connection.execute(`${prefix()} ${queryString} LIMIT ? OFFSET ?`, [
+                ...queryArgs,
+                pageSize,
+                pageSize * (pageIndex - 1),
+            ]),
+        );
+        const [countQuery] = await mysqlGetQuery<{ total_count: number } & RowDataPacket>(
+            connection.execute(`${prefix("COUNT(1) as total_count")} ${queryString}`, [...queryArgs]),
+        );
+        const { total_count } = countQuery;
+
+        return {
+            results: resultQuery,
+            count: total_count,
+            nextPage: pageSize * pageIndex < total_count ? pageIndex + 1 : null,
+            previousPage: pageIndex - 1 > 0 ? pageIndex - 1 : null,
+        };
+    });
+}
+
+export function sqlEqualIfNullShortcut(field: string) {
+    return `${field} = IF (:${field} IS NULL, ${field}, :${field})`;
+} 

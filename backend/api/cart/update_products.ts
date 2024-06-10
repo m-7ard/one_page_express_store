@@ -12,7 +12,7 @@ const update_products = routeWithErrorHandling(async (request: Request, response
         return;
     }
 
-    return await dbOperation(async (connection) => {
+    await dbOperation(async (connection) => {
         const cartProducts = await mysqlGetQuery<DatabaseCartProduct>(
             connection.query(
                 `

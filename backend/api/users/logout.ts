@@ -1,10 +1,14 @@
 import { Request, Response } from "express";
 import { lucia } from "../../lib/auth.js";
+import { routeWithErrorHandling } from "../../backend/utils.js";
 
-export default async function logout(request: Request, response: Response) {
+const logout = routeWithErrorHandling(async (request: Request, response: Response) => {
     if (!response.locals.session) {
-        return response.status(401).end();
+        response.status(401).end();
+        return;
     }
     await lucia.invalidateSession(response.locals.session.id);
-    return response.setHeader("Set-Cookie", lucia.createBlankSessionCookie().serialize()).status(200).send();
-}
+    response.setHeader("Set-Cookie", lucia.createBlankSessionCookie().serialize()).status(200).send();
+});
+
+export default logout;

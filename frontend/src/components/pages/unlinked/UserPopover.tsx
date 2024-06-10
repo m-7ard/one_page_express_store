@@ -1,4 +1,4 @@
-import React, { Fragment, PropsWithChildren } from "react";
+import React, { PropsWithChildren } from "react";
 import { Popover } from "@headlessui/react";
 import AbstractPopover, { AbstractPopoverPanel, AbstractPopoverTrigger } from "../../elements/abstract/AbstractPopover";
 import Fieldset from "../../elements/forms/Fieldset";
@@ -15,11 +15,10 @@ import {
     createRouter,
     useNavigate,
 } from "@tanstack/react-router";
-import { FormErrors } from "./components/forms/GenericForm";
 import { UserType } from "../../../Types";
 import { useAppContext } from "../../../Context";
 import { createUseContext, useGenericForm } from "../../../utils";
-import App from "../linked/App/App";
+import { FormErrors } from "../../elements/forms/GenericForm";
 
 const [AuthContext, useAuthContext] = createUseContext<{
     user: UserType;

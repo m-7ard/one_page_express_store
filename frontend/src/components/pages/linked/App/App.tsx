@@ -11,7 +11,7 @@ import CartPopover from "../../unlinked/CartPopover";
 export type UsersUserAPIQuery = {
     user: UserType;
     cart: CartType;
-} | null
+} | null;
 
 const rawFilters: { field_name: string; field_value: string }[] = JSON.parse(
     document.getElementById("filters")?.innerText ?? "[]",
@@ -39,49 +39,19 @@ export default function App() {
         return;
     }
 
-    const user = userAndCartQuery.data?.user
-    const cart = userAndCartQuery.data?.cart
+    const user = userAndCartQuery.data?.user;
+    const cart = userAndCartQuery.data?.cart;
 
     return (
         <AppContext.Provider value={{ user, filters, cart }}>
             <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
                 <div
                     style={{ zIndex: 100 }}
-                    className="flex flex-row items-center relative justify-between gap-8 px-4 py-2 text-gray-50 shadow z-50 bg-[#38382A] border-b border-[#23231A]"
+                    className="px-4 py-2 text-gray-50 shadow z-50 bg-[#38382A] border-b border-[#23231A]"
                 >
-                    <div className="flex flex-row gap-4 items-center">
-                        <RouteNavigator
-                            Trigger={({ setReferenceElement, open }) => (
-                                <Popover.Button
-                                    ref={setReferenceElement}
-                                    className={[
-                                        "header@app__button",
-                                        open === true && "header@app__button--active",
-                                    ].join(" ")}
-                                >
-                                    <div className="hidden sm:block">Navigate</div>
-                                    <DocumentTextIcon className="h-4 w-4" />
-                                </Popover.Button>
-                            )}
-                        />
-                    </div>
-                    <div className="flex flex-row gap-4 items-center">
-                        <UserPopover
-                            Trigger={({ setReferenceElement, open }) => (
-                                <Popover.Button
-                                    ref={setReferenceElement}
-                                    className={[
-                                        "header@app__button",
-                                        open === true && "header@app__button--active",
-                                    ].join(" ")}
-                                >
-                                    <div data-role="text">User</div>
-                                    <UserIcon className="h-4 w-4" />
-                                </Popover.Button>
-                            )}
-                        />
-                        {user != null && (
-                            <CartPopover
+                    <div className="max-w-screen-lg w-full mx-auto relative flex flex-row items-center justify-between gap-8 ">
+                        <div className="flex flex-row gap-4 items-center">
+                            <RouteNavigator
                                 Trigger={({ setReferenceElement, open }) => (
                                     <Popover.Button
                                         ref={setReferenceElement}
@@ -90,12 +60,50 @@ export default function App() {
                                             open === true && "header@app__button--active",
                                         ].join(" ")}
                                     >
-                                        <div className="hidden sm:block">Cart</div>
-                                        <ShoppingCartIcon className="h-4 w-4" />
+                                        <div className="hidden sm:block">Navigate</div>
+                                        <div className="w-6 h-6 flex items-center justify-center">
+                                            <DocumentTextIcon className="h-4 w-4" />
+                                        </div>
                                     </Popover.Button>
                                 )}
                             />
-                        )}
+                        </div>
+                        <div className="flex flex-row gap-4 items-center">
+                            <UserPopover
+                                Trigger={({ setReferenceElement, open }) => (
+                                    <Popover.Button
+                                        ref={setReferenceElement}
+                                        className={[
+                                            "header@app__button",
+                                            open === true && "header@app__button--active",
+                                        ].join(" ")}
+                                    >
+                                        <div data-role="text">User</div>
+                                        <div className="w-6 h-6 flex items-center justify-center">
+                                            <UserIcon className="h-4 w-4" />
+                                        </div>
+                                    </Popover.Button>
+                                )}
+                            />
+                            {user != null && (
+                                <CartPopover
+                                    Trigger={({ setReferenceElement, open }) => (
+                                        <Popover.Button
+                                            ref={setReferenceElement}
+                                            className={[
+                                                "header@app__button",
+                                                open === true && "header@app__button--active",
+                                            ].join(" ")}
+                                        >
+                                            <div className="hidden sm:block">Cart</div>
+                                            <div className="w-6 h-6 flex items-center justify-center">
+                                                <ShoppingCartIcon className="h-4 w-4" />
+                                            </div>
+                                        </Popover.Button>
+                                    )}
+                                />
+                            )}
+                        </div>
                     </div>
                 </div>
                 <Outlet />

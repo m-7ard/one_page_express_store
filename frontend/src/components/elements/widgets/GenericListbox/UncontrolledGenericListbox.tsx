@@ -1,10 +1,5 @@
 import DefaultGenericListbox from "./DefaultGenericListbox";
-
-type Value = string;
-type Choice = {
-    value: Value;
-    label: Value;
-};
+import { Choice, Value } from "./types";
 
 export function UncontrolledGenericListbox({
     name,

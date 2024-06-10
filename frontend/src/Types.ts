@@ -1,13 +1,13 @@
 export interface UserType {
     id: string;
-	username: string;
+    username: string;
     is_admin: boolean;
 }
 
 export interface CartType {
     id: number;
     products: CartProductType[];
-    user_id: UserType['id'];
+    user_id: UserType["id"];
 }
 
 export interface FilterType {
@@ -31,9 +31,25 @@ export interface CartProductType {
     product: ProductType;
 }
 
+export interface OrderType {
+    id: number;
+    amount: number;
+    date_created: string;
+    archive: {
+        product: ProductType;
+    };
+    shipping_address_primary: string;
+    shipping_address_secondary: string;
+    shipping_city: string;
+    shipping_state: string;
+    shipping_zip: string;
+    shipping_country: string;
+    status: "pending" | "shipping" | "completed" | "presumed_completed" | "canceled" | "refunded";
+}
+
 export interface PaginatedQuery<T> {
-    results: T[]
-    count: number
+    results: T[];
+    count: number;
     nextPage: number | undefined;
     previousPage: number | undefined;
 }

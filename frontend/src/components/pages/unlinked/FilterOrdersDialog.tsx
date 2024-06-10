@@ -1,17 +1,15 @@
 import { XMarkIcon } from "@heroicons/react/24/solid";
-import { useAbstractDialogContext, useAppContext, useQueryStringContext } from "../../../Context";
+import { useAbstractDialogContext, useQueryStringContext } from "../../../Context";
 import AbstractDialog, { AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
-import Fieldset from "../../elements/forms/Fieldset";
-import FormListBoxWidget from "../../elements/forms/widgets/FormListBox";
 import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldWidget";
 import FormField from "../../elements/forms/FormField";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { PaginatedQuery, ProductType } from "../../../Types";
-import App from "../linked/App/App";
+import FormListboxWidget from "../../elements/forms/widgets/FormListBox";
 
-export default function FilterProductsDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
+export default function FilterOrderDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
     return (
         <AbstractDialog
             Trigger={Trigger}
@@ -20,16 +18,25 @@ export default function FilterProductsDialog({ Trigger }: { Trigger: AbstractDia
                     <div className="absolute right-4 top-4 cursor-pointer" onClick={onClose}>
                         <XMarkIcon className="w-6 h-6" />
                     </div>
-                    <FilterProductsForm />
+                    <FilterOrderForm />
                 </Dialog.Panel>
             )}
         />
     );
 }
 
-function FilterProductsForm() {
+function FilterOrderForm() {
+    /*
+    
+        TODO: 
+            - filter by product name, requires to look up how to query the fk
+            - status
+            - client name
+            - amount
+            - total price (?) requires lookup
+
+    */
     const queryClient = useQueryClient();
-    const { filters } = useAppContext();
     const { setOpen } = useAbstractDialogContext();
     const { sortParams, filterParams } = useQueryStringContext();
 
@@ -65,7 +72,7 @@ function FilterProductsForm() {
             ref={formRef}
             className="flex flex-col gap-4 overflow-hidden max-h-full"
             method="GET"
-            action="/api/products/list"
+            action="/api/orders/list"
             onSubmit={(event) => {
                 event.preventDefault();
                 mutation.mutate({ form: event.currentTarget });
@@ -82,35 +89,52 @@ function FilterProductsForm() {
                     <div className="flex flex-row gap-4">
                         <div className="basis-1/2">
                             <FormField
-                                name="min_price"
-                                label="Min Price"
+                                name="date_start"
+                                label="Date Start"
                                 widget={FormCharFieldWidget({
-                                    initial: choices?.min_price,
+                                    type: "datetime-local",
                                 })}
                             />
                         </div>
                         <div className="basis-1/2">
                             <FormField
-                                name="max_price"
-                                label="Max Price"
+                                name="date_end"
+                                label="Date End"
                                 widget={FormCharFieldWidget({
-                                    inputMode: "numeric",
-                                    initial: choices?.max_price,
+                                    type: "datetime-local",
                                 })}
                             />
                         </div>
                     </div>
-                    <Fieldset
-                        fields={filters.map(({ field_name, field_value }) => {
-                            return {
-                                name: field_name,
-                                label: field_name,
-                                widget: FormListBoxWidget({
-                                    choices: field_value.map((value) => ({ label: value, value: value })),
-                                    initial: choices?.[field_name],
-                                }),
-                            };
+                    <FormField
+                        name="status"
+                        label="Status"
+                        widget={FormListboxWidget({
+                            choices: [
+                                { label: "Pending", value: "pending" },
+                                { label: "Shipping", value: "shipping" },
+                                { label: "Completed", value: "completed" },
+                                { label: "Pesumed Completed", value: "presumed_completed" },
+                                { label: "Canceled", value: "canceled" },
+                                { label: "Refunded", value: "refunded" },
+                            ],
+                            placeholder: 'All'
                         })}
+                    />
+                    <FormField
+                        name="product_name"
+                        label="Product Name (Archived)"
+                        widget={FormCharFieldWidget({})}
+                    />
+                    <FormField
+                        name="client_name"
+                        label="Client Name"
+                        widget={FormCharFieldWidget({})}
+                    />
+                    <FormField
+                        name="amount"
+                        label="Amount"
+                        widget={FormCharFieldWidget({})}
                     />
                 </div>
             </div>

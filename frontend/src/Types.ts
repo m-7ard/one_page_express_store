@@ -38,6 +38,7 @@ export interface OrderType {
     archive: {
         product: ProductType;
     };
+    shipping_name: string;
     shipping_address_primary: string;
     shipping_address_secondary: string;
     shipping_city: string;

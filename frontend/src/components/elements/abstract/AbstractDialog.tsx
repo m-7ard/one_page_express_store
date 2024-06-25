@@ -4,6 +4,7 @@ import { AbstractDialogContext } from "../../../Context";
 
 export type AbstractDialogTrigger = React.FunctionComponent<{
     onClick: () => void;
+    open: boolean;
 }>;
 
 export type AbstractDialogPanel = React.FunctionComponent<{
@@ -31,6 +32,7 @@ export default function AbstractDialog({
                 onClick={() => {
                     setOpen(!open);
                 }}
+                open={open}
             />
             <Dialog open={open} onClose={() => setOpen(false)} className="relative" style={{ zIndex: 5000 }}>
                 <div className="fixed inset-0 bg-black/30" aria-hidden="true" />

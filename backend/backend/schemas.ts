@@ -4,20 +4,16 @@ import { BASE_DIR } from "./settings.js";
 import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
 import { RowDataPacket } from "mysql2";
 import { PRODUCT } from "./constants.js";
-import { DatabaseUser } from "./database_types.js";
+import { DatabaseProduct, DatabaseUser } from "./database_types.js";
 
 export const productSchema = z.object({
     id: z.coerce
         .number()
         .min(1)
         .refine(
-            async (value) => {
-                return await dbOperation(async (connection) => {
-                    const [result] = await connection.execute<RowDataPacket[]>(`SELECT 1 FROM product WHERE id = ?`, [
-                        value,
-                    ]);
-                    return result.length !== 0;
-                });
+            async (id) => {
+                const result = await mysqlQueryTableByID<DatabaseProduct>({ table: "product", id });
+                return result.length !== 0;
             },
             { message: "Product doesn't exist." },
         )
@@ -121,7 +117,10 @@ export const cartProductSchema = z.object({
         .number()
         .min(1)
         .refine(
-            async (value) => (await mysqlQueryTableByID({ table: "cart_product", id: value, fields: 1 })).length !== 0,
+            async (value) => {
+                const query = await mysqlQueryTableByID({ table: "cart_product", id: value, fields: 1 });
+                return query.length !== 0;
+            },
             { message: "Cart Product does not exist." },
         )
         .optional(),
@@ -173,5 +172,7 @@ export const orderSchema = z.object({
     shipping_state: z.string().min(1).max(100),
     shipping_zip: z.string().min(1).max(50),
     shipping_country: z.string().min(1).max(100),
-    status: z.enum(["pending", "shipping", "completed", "presumed_completed", "canceled", "refunded"]).default("pending"),
+    status: z
+        .enum(["pending", "shipping", "completed", "presumed_completed", "canceled", "refunded"])
+        .default("pending"),
 });

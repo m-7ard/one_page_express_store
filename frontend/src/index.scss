@@ -122,7 +122,7 @@ button:focus {
             @apply bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200;
         }
 
-        &--active {
+        &--active, [data-headlessui-state="open"] & {
             @apply bg-[#38382A] text-gray-200 shadow-none;
         }
 
@@ -132,7 +132,7 @@ button:focus {
     }
 
     .generic-panel {
-        @apply p-4 bg-gray-50 text-gray-900 border border-gray-900 w-full max-w-72 shadow;
+        @apply p-4 bg-gray-50 text-gray-900 border border-gray-900 w-full max-w-72 shadow overflow-auto;
     
         &__body {
             @apply flex flex-col gap-4;

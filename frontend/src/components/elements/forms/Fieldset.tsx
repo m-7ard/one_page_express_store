@@ -10,7 +10,7 @@ export default function Fieldset({
 }) {
     return fields.map(({ name, label, widget, helperText, optional }, i) => (
         <FormField
-            key={i}
+            key={name}
             name={name}
             label={label}
             widget={widget}

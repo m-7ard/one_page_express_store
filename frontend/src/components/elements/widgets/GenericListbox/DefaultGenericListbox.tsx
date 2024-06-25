@@ -1,7 +1,12 @@
 import { Listbox } from "@headlessui/react";
-import { useState } from "react";
-import { usePopper } from "react-popper-2";
 import { Choice, Value } from "./types";
+import {
+    TooltipProvider,
+    createUseContext,
+    useTooltipContext,
+    useTooltipContextPositioning,
+    useTooltipTools,
+} from "../../../../utils";
 
 interface DefaultGenericListboxInterface {
     placeholder?: string;
@@ -19,6 +24,10 @@ const getChoice = ({ choices, value }: { choices: Choice[]; value?: Value }) => 
     return choices.find((choice) => choice.value === value);
 };
 
+const [GenericListboxContext, useGenericListboxContext] = createUseContext<DefaultGenericListboxInterface>(
+    "useGenericListboxContext has to be used within <GenericListboxContext.Provider>",
+);
+
 export default function DefaultGenericListbox({
     placeholder = "---",
     nullable = true,
@@ -26,71 +35,85 @@ export default function DefaultGenericListbox({
     currentValue,
     parentProps,
 }: DefaultGenericListboxInterface) {
-    const currentChoice = getChoice({ choices, value: currentValue });
-    const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null);
-    const [popperElement, setPopperElement] = useState<HTMLElement | null>(null);
-    const popper = usePopper(referenceElement, popperElement, {
-        placement: "bottom-end",
-        strategy: "fixed",
-        modifiers: [
-            {
-                name: "preventOverflow",
-                options: {
-                    altAxis: true,
-                },
-            },
-            {
-                name: "offset",
-                options: {
-                    offset: [0, -1],
-                },
-            },
-        ],
-    });
+    const tooltipTools = useTooltipTools();
 
     return (
         <Listbox {...parentProps}>
-            <Listbox.Button
-                className={`
-                    mixin-button-base
-                    theme-group-listbox-generic-white__button
-                `}
-                ref={setReferenceElement}
-            >
-                {currentChoice?.label ?? placeholder}
-            </Listbox.Button>
-            <Listbox.Options
-                className={"theme-group-listbox-generic-white__menu"}
-                ref={setPopperElement}
-                style={{ ...popper.styles.popper, width: `${referenceElement?.offsetWidth}px`, zIndex: 5000 }}
-                {...popper.attributes.popper}
-            >
-                {nullable && (
-                    <Listbox.Option
-                        value={undefined}
-                        className={`
-                            mixin-button-base
-                            theme-group-listbox-generic-white__item
-                            ${currentValue === undefined && 'theme-group-listbox-generic-white__item--active'}
-                        `}
+            {({ open }) => (
+                <TooltipProvider
+                    value={{ ...tooltipTools, open, positioning: { top: "100%", left: "0px", right: "0px" } }}
+                >
+                    <GenericListboxContext.Provider
+                        value={{
+                            placeholder,
+                            nullable,
+                            choices,
+                            currentValue,
+                            parentProps,
+                        }}
                     >
-                        {placeholder}
-                    </Listbox.Option>
-                )}
-                {choices.map((choice, i) => (
-                    <Listbox.Option
-                        key={i}
-                        value={choice.value}
-                        className={`
-                            mixin-button-base
-                            theme-group-listbox-generic-white__item
-                            ${currentValue === choice.value && 'theme-group-listbox-generic-white__item--active'}
-                        `}
-                    >
-                        {choice.label}
-                    </Listbox.Option>
-                ))}
-            </Listbox.Options>
+                        <DefaultGenericListbox.Button />
+                        {open && <DefaultGenericListbox.Options />}
+                    </GenericListboxContext.Provider>
+                </TooltipProvider>
+            )}
         </Listbox>
     );
 }
+
+DefaultGenericListbox.Button = function Button() {
+    const { setReferenceElement } = useTooltipContext();
+    const { choices, currentValue, placeholder } = useGenericListboxContext();
+    const currentChoice = getChoice({ choices, value: currentValue });
+
+    return (
+        <Listbox.Button
+            className={`
+                mixin-button-base
+                theme-group-listbox-generic-white__button
+            `}
+            ref={setReferenceElement}
+        >
+            {currentChoice?.label ?? placeholder}
+        </Listbox.Button>
+    );
+};
+
+DefaultGenericListbox.Options = function Options() {
+    const { positionFlag } = useTooltipContextPositioning();
+    const { setTargetElement } = useTooltipContext();
+    const { nullable, choices, placeholder, currentValue } = useGenericListboxContext();
+
+    return (
+        <Listbox.Options
+            className={`z-50 fixed theme-group-listbox-generic-white__menu ${positionFlag ? "visible" : "invisible"}`}
+            ref={setTargetElement}
+        >
+            {nullable && (
+                <Listbox.Option
+                    value={undefined}
+                    className={`
+                    mixin-button-base
+                    theme-group-listbox-generic-white__item
+                    ${currentValue === undefined && "theme-group-listbox-generic-white__item--active"}
+                `}
+                >
+                    {placeholder}
+                </Listbox.Option>
+            )}
+            {choices.map((choice) => (
+                <Listbox.Option
+                    key={choice.value}
+                    value={choice.value}
+                    className={`
+                    mixin-button-base
+                    theme-group-listbox-generic-white__item
+                    ${currentValue === choice.value && "theme-group-listbox-generic-white__item--active"}
+                `}
+                >
+                    {choice.label}
+                </Listbox.Option>
+            ))}
+        </Listbox.Options>
+    );
+};

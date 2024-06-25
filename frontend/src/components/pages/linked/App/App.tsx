@@ -1,16 +1,17 @@
 import { DocumentTextIcon, ShoppingCartIcon, UserIcon } from "@heroicons/react/24/solid";
-import UserPopover from "../../unlinked/UserPopover";
-import { useQuery } from "@tanstack/react-query";
+import UserPopover from "../../unlinked/UserPopover/UserPopover";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppContext } from "../../../../Context";
-import { CartType, FilterType, UserType } from "../../../../Types";
+import { CartType, FilterType, OrderType, UserType } from "../../../../Types";
 import { Outlet } from "@tanstack/react-router";
-import { Popover } from "@headlessui/react";
-import RouteNavigator from "../../../elements/RouteNavigator";
-import CartPopover from "../../unlinked/CartPopover";
+import RouteNavigatorPopover from "./RouteNavigatorPopover/RouteNavigatorPopover";
+import CartPopover from "../../unlinked/CartPopver/CartPopover";
+import AbstractPopover from "../../../elements/abstract/AbstractPopover";
 
-export type UsersUserAPIQuery = {
+export type InitialUserDataQuery = {
     user: UserType;
     cart: CartType;
+    orders: OrderType[];
 } | null;
 
 const rawFilters: { field_name: string; field_value: string }[] = JSON.parse(
@@ -22,7 +23,7 @@ const filters: FilterType[] = rawFilters.map(({ field_name, field_value }) => ({
 }));
 
 export default function App() {
-    const userAndCartQuery = useQuery<UsersUserAPIQuery>({
+    const userAndCartQuery = useQuery<InitialUserDataQuery>({
         queryKey: ["user_and_cart"],
         queryFn: async () => {
             const response = await fetch("/api/users/user/");
@@ -31,9 +32,10 @@ export default function App() {
             } else if (response.status === 403) {
                 return null;
             }
-            throw Error("Could not fetch user from server");
+            throw Error("Could not fetch initial user data from server");
         },
     });
+    const queryClient = useQueryClient(); 
 
     if (!userAndCartQuery.isSuccess) {
         return;
@@ -41,6 +43,12 @@ export default function App() {
 
     const user = userAndCartQuery.data?.user;
     const cart = userAndCartQuery.data?.cart;
+    const orders = userAndCartQuery.data?.orders;
+
+    queryClient.setQueryData(["user"], () => user);
+    queryClient.setQueryData(["cart"], () => cart);
+    queryClient.setQueryData(["orders"], () => orders);
+    console.log(orders)
 
     return (
         <AppContext.Provider value={{ user, filters, cart }}>
@@ -51,56 +59,56 @@ export default function App() {
                 >
                     <div className="max-w-screen-lg w-full mx-auto relative flex flex-row items-center justify-between gap-8 ">
                         <div className="flex flex-row gap-4 items-center">
-                            <RouteNavigator
-                                Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button
-                                        ref={setReferenceElement}
-                                        className={[
-                                            "header@app__button",
-                                            open === true && "header@app__button--active",
-                                        ].join(" ")}
+                            <RouteNavigatorPopover
+                                Trigger={({ open }) => (
+                                    <AbstractPopover.Trigger
+                                        className={`
+                                            header@app__button
+                                            ${open && "header@app__button--active"}
+                                        `}
                                     >
                                         <div className="hidden sm:block">Navigate</div>
                                         <div className="w-6 h-6 flex items-center justify-center">
                                             <DocumentTextIcon className="h-4 w-4" />
                                         </div>
-                                    </Popover.Button>
+                                    </AbstractPopover.Trigger>
                                 )}
+                                positioning={{ top: '100%', left: "0px" }}
                             />
                         </div>
                         <div className="flex flex-row gap-4 items-center">
                             <UserPopover
-                                Trigger={({ setReferenceElement, open }) => (
-                                    <Popover.Button
-                                        ref={setReferenceElement}
-                                        className={[
-                                            "header@app__button",
-                                            open === true && "header@app__button--active",
-                                        ].join(" ")}
+                                Trigger={({ open }) => (
+                                    <AbstractPopover.Trigger
+                                        className={`
+                                            header@app__button
+                                            ${open && "header@app__button--active"}
+                                        `}
                                     >
                                         <div data-role="text">User</div>
                                         <div className="w-6 h-6 flex items-center justify-center">
                                             <UserIcon className="h-4 w-4" />
                                         </div>
-                                    </Popover.Button>
+                                    </AbstractPopover.Trigger>
                                 )}
+                                positioning={{ top: "100%", right: "0px" }}
                             />
                             {user != null && (
                                 <CartPopover
-                                    Trigger={({ setReferenceElement, open }) => (
-                                        <Popover.Button
-                                            ref={setReferenceElement}
-                                            className={[
-                                                "header@app__button",
-                                                open === true && "header@app__button--active",
-                                            ].join(" ")}
+                                    Trigger={({ open }) => (
+                                        <AbstractPopover.Trigger
+                                            className={`
+                                                header@app__button
+                                                ${open && "header@app__button--active"}
+                                            `}
                                         >
                                             <div className="hidden sm:block">Cart</div>
                                             <div className="w-6 h-6 flex items-center justify-center">
                                                 <ShoppingCartIcon className="h-4 w-4" />
                                             </div>
-                                        </Popover.Button>
+                                        </AbstractPopover.Trigger>
                                     )}
+                                    positioning={{ top: "100%", right: "0px" }}
                                 />
                             )}
                         </div>

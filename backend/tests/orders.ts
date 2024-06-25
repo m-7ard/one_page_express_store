@@ -1,14 +1,21 @@
 import { env } from "process";
 import context, { getFromContext } from "../backend/context.js";
-import { DatabaseCart, DatabaseCartProduct, DatabaseOrder, DatabaseUser } from "../backend/database_types.js";
-import { CartProduct, Order, User } from "../backend/managers.js";
+import {
+    DatabaseCart,
+    DatabaseCartProduct,
+    DatabaseOrder,
+    DatabaseProduct,
+    DatabaseUser,
+} from "../backend/database_types.js";
+import { CartProduct, Order, Product, User } from "../backend/managers.js";
 import { mysqlGetOrNull, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "../backend/utils.js";
 import { createCartProduct, createProduct, createSessionCookie, objectToFormData, test, testCase } from "./_utils.js";
 import { cartProductMixin, productsMixin, usersMixin } from "./mixins.js";
 import assert from "assert";
 import { cartProductSerializer, cartSerializer, orderSerializer } from "../backend/serializers.js";
 import { object, z } from "zod";
-import { cartProductSchema } from "../backend/schemas.js";
+import { cartProductSchema, productSchema } from "../backend/schemas.js";
+import sql, { join } from "sql-template-tag";
 
 context.testsToRun = "__all__";
 
@@ -82,18 +89,6 @@ testCase(async () => {
         return { cart, cartProducts, ADMIN_2__PRODUCT_1, ADMIN_2__PRODUCT_2, EXPECTED_CART_PRODUCTS_COUNT };
     };
 
-    const ADMIN_1_ORDERS_MIXN = async (cartProducts: Awaited<ReturnType<typeof ADMIN_1_CART_MIXN>>["cartProducts"]) => {
-        const orders = await Promise.all(cartProducts.map((cp) => Order.create({
-            user_id: users.ADMIN_1.id,
-            product_id: cp.product_id,
-            amount: cp.amount,
-            status: "pending",
-            ...DUMMY_SHIPPING_DATA
-        })));
-
-        return { orders };
-    };
-
     await test(async () => {
         const { cartProducts, EXPECTED_CART_PRODUCTS_COUNT } = await ADMIN_1_CART_MIXN();
         const response = await fetch(`http://localhost:3001/api/orders/checkout`, {
@@ -104,14 +99,19 @@ testCase(async () => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                cartProducts: cartProducts,
+                cartProducts: await z.array(cartProductSerializer).parseAsync(cartProducts),
                 formData: DUMMY_SHIPPING_DATA,
             }),
         });
 
+        //
         assert.strictEqual(response.status, 201);
+        
+        //
         const data = await response.json();
         assert.strictEqual(data.length, EXPECTED_CART_PRODUCTS_COUNT);
+        
+        //
         const dbCart = await mysqlGetOrThrow<DatabaseCart>(
             pool.execute("SELECT * FROM cart WHERE user_id = ?", [users.ADMIN_1.id]),
         );
@@ -121,7 +121,7 @@ testCase(async () => {
 
     await test(async () => {
         const { cartProducts, EXPECTED_CART_PRODUCTS_COUNT, ADMIN_2__PRODUCT_1 } = await ADMIN_1_CART_MIXN();
-        ADMIN_2__PRODUCT_1.amount = 1000000;
+        cartProducts[0].amount = 10000000000;
         const response = await fetch(`http://localhost:3001/api/orders/checkout`, {
             method: "POST",
             headers: {
@@ -130,7 +130,7 @@ testCase(async () => {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                cartProducts: cartProducts,
+                cartProducts: await z.array(cartProductSerializer).parseAsync(cartProducts),
                 formData: DUMMY_SHIPPING_DATA,
             }),
         });
@@ -144,23 +144,54 @@ testCase(async () => {
     }, "Fail To Checkout Cart Products With Invalid Amount");
 
     await test(async () => {
+        //
         const { cartProducts, EXPECTED_CART_PRODUCTS_COUNT } = await ADMIN_1_CART_MIXN();
-        const orders = await ADMIN_1_ORDERS_MIXN(cartProducts);
-        const response = await fetch(`http://localhost:3001/api/orders/list?status=pending`, {
-            method: "GET",
+
+        //
+        const productsToCheckout = await z.array(cartProductSerializer).parseAsync(cartProducts.slice(0, 2));
+
+        //
+        const [productToUpdate] = await mysqlQueryTableByID<DatabaseProduct>({
+            table: "product",
+            id: cartProducts[0].product_id,
+        });
+        productToUpdate.name = "New name abc";
+        const updateData = await productSchema.required().parseAsync(productToUpdate);
+        await Product.update(updateData);
+
+        //
+        const response = await fetch(`http://localhost:3001/api/orders/checkout`, {
+            method: "POST",
             headers: {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
                 "Content-Type": "application/json",
-            }
+            },
+            body: JSON.stringify({
+                cartProducts: productsToCheckout,
+                formData: DUMMY_SHIPPING_DATA,
+            }),
         });
 
-        assert.strictEqual(response.status, 200)
+        //
+        assert.strictEqual(response.status, 400);
 
-        const data = await response.json();
-        assert.strictEqual(data.results.length, 24);
-        assert.strictEqual(data.count, EXPECTED_CART_PRODUCTS_COUNT);
-    }, "Fail To Checkout Cart Products With Invalid Amount");
+        //
+        const errors = await response.json();
+        assert.strictEqual(errors.promptUpdatedCartProducts, true);
+        assert.strictEqual(errors.updatedCartProducts.length, 2);
+
+        //
+        const query = sql`
+            SELECT * FROM cart_product 
+                WHERE id IN (${join(errors.updatedCartProducts.map((cp: z.output<typeof cartProductSerializer>) => cp.id))})
+        `;
+        const latestCartProducts = await mysqlGetQuery<DatabaseCartProduct>(pool.execute(query.sql, query.values));
+        assert.deepStrictEqual(
+            errors.updatedCartProducts,
+            await z.array(cartProductSerializer).parseAsync(latestCartProducts),
+        );
+    }, "Fail To Checkout Cart Products With Outdated Data");
 
     await test(async () => {
         const { cartProducts } = await ADMIN_1_CART_MIXN();
@@ -170,8 +201,8 @@ testCase(async () => {
             product_id: cartProduct.product_id,
             amount: cartProduct.amount,
             status: "pending",
-            ...DUMMY_SHIPPING_DATA
-        })
+            ...DUMMY_SHIPPING_DATA,
+        });
 
         const response = await fetch(`http://localhost:3001/api/orders/${insertId}/confirm_shipping`, {
             method: "PUT",
@@ -179,21 +210,24 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
                 "Content-Type": "application/json",
-            }
+            },
         });
 
-        assert.strictEqual(response.status, 200)
+        assert.strictEqual(response.status, 200);
 
         const data = await response.json();
         const order = await mysqlGetOrThrow<DatabaseOrder>(
             pool.execute(`SELECT * FROM _order WHERE id = ?`, [insertId]),
         );
-        
-        assert.deepStrictEqual({
-            ...data,
-            date_created: new Date(data.date_created)
-        }, orderSerializer.parse(order));
-        assert.strictEqual(order.status, 'shipping');
+
+        assert.deepStrictEqual(
+            {
+                ...data,
+                date_created: new Date(data.date_created),
+            },
+            orderSerializer.parse(order),
+        );
+        assert.strictEqual(order.status, "shipping");
     }, "Confirm Order Shipping As Admin");
 
     await test(async () => {
@@ -204,8 +238,8 @@ testCase(async () => {
             product_id: cartProduct.product_id,
             amount: cartProduct.amount,
             status: "pending",
-            ...DUMMY_SHIPPING_DATA
-        })
+            ...DUMMY_SHIPPING_DATA,
+        });
 
         const response = await fetch(`http://localhost:3001/api/orders/${insertId}/confirm_shipping`, {
             method: "PUT",
@@ -213,10 +247,10 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
                 Cookie: CUSTOMER_1_COOKIE,
                 "Content-Type": "application/json",
-            }
+            },
         });
 
-        assert.strictEqual(response.status, 403)
+        assert.strictEqual(response.status, 403);
     }, "Fail To Confirm Order Shipping As Client");
 
     await test(async () => {
@@ -231,8 +265,8 @@ testCase(async () => {
             product_id: cartProduct.product_id,
             amount: cartProduct.amount,
             status: "pending",
-            ...DUMMY_SHIPPING_DATA
-        })
+            ...DUMMY_SHIPPING_DATA,
+        });
 
         const response = await fetch(`http://localhost:3001/api/orders/${insertId}/confirm_completed`, {
             method: "PUT",
@@ -240,21 +274,24 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
                 Cookie: CUSTOMER_1_COOKIE,
                 "Content-Type": "application/json",
-            }
+            },
         });
 
-        assert.strictEqual(response.status, 200)
+        assert.strictEqual(response.status, 200);
 
         const data = await response.json();
         const order = await mysqlGetOrThrow<DatabaseOrder>(
             pool.execute(`SELECT * FROM _order WHERE id = ?`, [insertId]),
         );
-        
-        assert.deepStrictEqual({
-            ...data,
-            date_created: new Date(data.date_created)
-        }, orderSerializer.parse(order));
-        assert.strictEqual(order.status, 'completed');
+
+        assert.deepStrictEqual(
+            {
+                ...data,
+                date_created: new Date(data.date_created),
+            },
+            orderSerializer.parse(order),
+        );
+        assert.strictEqual(order.status, "completed");
     }, "Confirm Order Complete As Client");
 
     await test(async () => {
@@ -265,8 +302,8 @@ testCase(async () => {
             product_id: cartProduct.product_id,
             amount: cartProduct.amount,
             status: "pending",
-            ...DUMMY_SHIPPING_DATA
-        })
+            ...DUMMY_SHIPPING_DATA,
+        });
 
         const response = await fetch(`http://localhost:3001/api/orders/${insertId}/confirm_completed`, {
             method: "PUT",
@@ -274,15 +311,15 @@ testCase(async () => {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
                 "Content-Type": "application/json",
-            }
+            },
         });
 
-        assert.strictEqual(response.status, 200)
+        assert.strictEqual(response.status, 200);
         // ...
         const order = await mysqlGetOrThrow<DatabaseOrder>(
             pool.execute(`SELECT * FROM _order WHERE id = ?`, [insertId]),
         );
         // ...
-        assert.strictEqual(order.status, 'presumed_completed');
+        assert.strictEqual(order.status, "presumed_completed");
     }, "Confirm Order Presumed Complete As Admin");
 });

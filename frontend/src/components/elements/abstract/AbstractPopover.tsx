@@ -1,43 +1,59 @@
 import { Popover } from "@headlessui/react";
-import { Options } from "@popperjs/core";
-import React, { useState } from "react";
-import { usePopper } from "react-popper-2";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+    TooltipProvider,
+    createUseContext,
+    fitFixedContainer,
+    positionFixedContainer,
+    useTooltipContext,
+    useTooltipTools,
+} from "../../../utils";
+import useDimensions from "react-cool-dimensions";
 
-export type AbstractPopoverTrigger = React.FunctionComponent<{
-    setReferenceElement: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
-    open?: boolean;
-}>;
+export const [AbstractPopoverContext, useAbstractPopoverContext] = createUseContext<{
+    open: boolean;
+}>("useAbstractPopover has to be used within <AbstractPopover.Provider>");
 
-export type AbstractPopoverPanel = React.FunctionComponent<{
-    referenceElement: HTMLElement | null;
-    setPopperElement: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
-    popper: ReturnType<typeof usePopper>;
-    open?: boolean;
-}>;
+export type AbstractPopoverTrigger = React.FunctionComponent<{ open: boolean }>;
+export type AbstractPopoverPanel = React.FunctionComponent<Record<string, never>>;
+export type AbstractPopoverProps = {
+    Trigger: AbstractPopoverTrigger;
+    Panel: AbstractPopoverPanel;
+    positioning: {
+        top?: string;
+        right?: string;
+        bottom?: string;
+        left?: string;
+    }
+};
 
 export default function AbstractPopover({
     Trigger,
     Panel,
-    options,
-    // initial = false,
-}: {
-    Trigger: AbstractPopoverTrigger;
-    Panel: AbstractPopoverPanel;
-    options: Partial<Options>;
-    initial?: boolean;
-}) {
-    const [referenceElement, setReferenceElement] = useState<HTMLElement | null>(null);
-    const [popperElement, setPopperElement] = useState<HTMLElement | null>(null);
-    const popper = usePopper(referenceElement, popperElement, options);
+    positioning,
+}: AbstractPopoverProps) {
+    const tooltipTools = useTooltipTools();
 
     return (
-        <Popover className={"z-50 flex flex-col"}>
-            {({ open }) => (
-                <>
-                    <Trigger setReferenceElement={setReferenceElement} open={open} />
-                    <Panel referenceElement={referenceElement} setPopperElement={setPopperElement} popper={popper} open={open} />
-                </>
-            )}
+        <Popover className={"flex flex-col"}>
+            {({ open }) => {
+                return (
+                    <TooltipProvider value={{ ...tooltipTools, open, positioning }}>
+                        {<Trigger open={open} />}
+                        {open && <Panel />}
+                    </TooltipProvider>
+                );
+            }}
         </Popover>
     );
 }
+
+AbstractPopover.Trigger = function Trigger(attrs: React.ComponentProps<typeof Popover.Button>) {
+    const { setReferenceElement } = useTooltipContext();
+    return <Popover.Button {...attrs} ref={setReferenceElement} />;
+};
+
+AbstractPopover.Panel = function Panel(attrs: React.ComponentProps<typeof Popover.Panel>) {
+    const { setTargetElement } = useTooltipContext();
+    return <Popover.Panel {...attrs} ref={setTargetElement} />;
+};

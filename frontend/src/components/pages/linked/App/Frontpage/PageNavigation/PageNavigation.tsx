@@ -34,9 +34,7 @@ export function PageNavigation({ queryKey }: { queryKey: QueryKey }) {
                     value={page_index.current.toString()}
                     choices={Array.from({
                         length: Math.floor(query.count / 24) + 1,
-                    }).map((_, i) => {
-                        return { value: `${i + 1}`, label: `${i + 1}` };
-                    })}
+                    }).map((_, i) => ({ value: `${i + 1}`, label: `${i + 1}` }) )}
                     onChange={(value) => {
                         if (parseInt(value) === page_index.current) {
                             return;

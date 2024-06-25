@@ -3,10 +3,11 @@ import EditProductDialog from "../../../../unlinked/EditProductDialog";
 import { ProductContext, useAppContext } from "../../../../../../Context";
 import DeleteProductDialog from "../../../../unlinked/DeleteProductDialog";
 import ProductInformationDisplayDialog from "../../../../unlinked/ProductInformationDisplayDialog";
-import UserPopover from "../../../../unlinked/UserPopover";
+import UserPopover from "../../../../unlinked/UserPopover/UserPopover";
 import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { UsersUserAPIQuery } from "../../App";
+import { InitialUserDataQuery } from "../../App";
+import AbstractPopover from "../../../../../elements/abstract/AbstractPopover";
 
 export default function Product(product: ProductType) {
     const queryClient = useQueryClient();
@@ -39,7 +40,7 @@ export default function Product(product: ProductType) {
             return Promise.reject(errors);
         },
         onSuccess: (data: CartProductType) => {
-            queryClient.setQueryData<UsersUserAPIQuery>(["user_and_cart"], (previous) => {
+            queryClient.setQueryData<InitialUserDataQuery>(["user_and_cart"], (previous) => {
                 if (previous == null) {
                     return null;
                 }
@@ -73,9 +74,9 @@ export default function Product(product: ProductType) {
                 </div>
                 {user == null ? (
                     <UserPopover
-                        Trigger={({ setReferenceElement, open }) => (
-                            <Popover.Button
-                                ref={setReferenceElement}
+                        positioning={{ top: "0px", left: "100%" }}
+                        Trigger={({ open }) => (
+                            <AbstractPopover.Trigger
                                 className={`
                                     mixin-button-like
                                     mixin-button-base
@@ -85,7 +86,7 @@ export default function Product(product: ProductType) {
                                 `}
                             >
                                 Add to Cart
-                            </Popover.Button>
+                            </AbstractPopover.Trigger>
                         )}
                     />
                 ) : isInCart ? (

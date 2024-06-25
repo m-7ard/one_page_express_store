@@ -40,12 +40,10 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
     return (
         <AbstractPopover
             Trigger={Trigger}
-            Panel={({ setPopperElement, popper: { styles, attributes } }) => (
+            Panel={({ setTargetElement: setPopperElement }) => (
                 <Popover.Panel 
                     className="flex flex-col mt-1 bg-gray-50 shadow divide-y divide-gray-900 border border-gray-900 z-50 max-w-96 ui-active:outline-none ui-open:outline-none"
                     ref={setPopperElement}
-                    style={styles.popper}
-                    {...attributes.popper}
                 >
                     {CHOICES.map(({ label, value }) => (
                         <Popover.Button key={value}>
@@ -79,18 +77,6 @@ export default function SortProductsPopover({ Trigger }: { Trigger: AbstractPopo
                     ))}
                 </Popover.Panel>
             )}
-            options={{
-                placement: "bottom-end",
-                strategy: "fixed",
-                modifiers: [
-                    {
-                        name: "preventOverflow",
-                        options: {
-                            altAxis: true,
-                        },
-                    },
-                ],
-            }}
         />
     );
 }

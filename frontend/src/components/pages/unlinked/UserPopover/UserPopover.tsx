@@ -66,20 +66,19 @@ export default function UserPopover({ Trigger, positioning }: Pick<AbstractPopov
 
 UserPopover.Panel = function Panel() {
     const { user } = useAppContext();
-    const routerRef = useRef(
-        createRouter({
-            routeTree,
-            history: createMemoryHistory({ initialEntries: [user == null ? "/login" : "/profile"] }),
-        }),
-    );
+    const router = createRouter({
+        routeTree,
+        history: createMemoryHistory({ initialEntries: [user == null ? "/login" : "/profile"] }),
+    });
 
-    const { positionFlag } = useTooltipContextPositioning();
+    const { positionFlag, resizeWindow } = useTooltipContextPositioning();
+    router.subscribe("onResolved", resizeWindow);
 
     return (
         <AbstractPopover.Panel
             className={`z-50 generic-panel fixed overflow-auto ${positionFlag ? "visible" : "invisible"}`}
         >
-            <RouterProvider router={routerRef.current} />
+            <RouterProvider router={router} />
         </AbstractPopover.Panel>
     );
 };

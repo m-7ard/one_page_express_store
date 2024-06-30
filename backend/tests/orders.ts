@@ -4,20 +4,30 @@ import {
     DatabaseCart,
     DatabaseCartProduct,
     DatabaseOrder,
+    DatabaseOrderShipping,
     DatabaseProduct,
-    DatabaseUser,
 } from "../backend/database_types.js";
-import { CartProduct, Order, Product, User } from "../backend/managers.js";
-import { mysqlGetOrNull, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "../backend/utils.js";
+import { CartProduct, Order, Product } from "../backend/managers.js";
+import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "../backend/utils.js";
 import { createCartProduct, createProduct, createSessionCookie, objectToFormData, test, testCase } from "./_utils.js";
-import { cartProductMixin, productsMixin, usersMixin } from "./mixins.js";
+import { productsMixin, usersMixin } from "./mixins.js";
 import assert from "assert";
-import { cartProductSerializer, cartSerializer, orderSerializer } from "../backend/serializers.js";
-import { object, z } from "zod";
-import { cartProductSchema, productSchema } from "../backend/schemas.js";
+import {
+    cartProductSerializer,
+    cartSerializer,
+    orderSerializer,
+    orderShippingSerializer,
+} from "../backend/serializers.js";
+import { z } from "zod";
+import { productSchema } from "../backend/schemas.js";
 import sql, { join } from "sql-template-tag";
 
-context.testsToRun = "__all__";
+context.testsToRun = ["Successfully fetch order shipping data as client or admin"];
+
+/* 
+    TODO: 
+        test for duplicate order shipping 
+*/
 
 testCase(async () => {
     const pool = getFromContext("pool");
@@ -106,11 +116,11 @@ testCase(async () => {
 
         //
         assert.strictEqual(response.status, 201);
-        
+
         //
         const data = await response.json();
         assert.strictEqual(data.length, EXPECTED_CART_PRODUCTS_COUNT);
-        
+
         //
         const dbCart = await mysqlGetOrThrow<DatabaseCart>(
             pool.execute("SELECT * FROM cart WHERE user_id = ?", [users.ADMIN_1.id]),
@@ -209,25 +219,47 @@ testCase(async () => {
             headers: {
                 Origin: env.ORIGIN as string,
                 Cookie: ADMIN_1_COOKIE,
-                "Content-Type": "application/json",
             },
+            body: objectToFormData({
+                tracking_number: "123",
+                courier_name: "courier",
+                additional_information: "extra info",
+            }),
         });
 
+        //
         assert.strictEqual(response.status, 200);
 
-        const data = await response.json();
-        const order = await mysqlGetOrThrow<DatabaseOrder>(
+        //
+        const data: {
+            order: z.output<typeof orderSerializer>;
+            orderShipping: z.output<typeof orderShippingSerializer>;
+        } = await response.json();
+
+        const dbOrder = await mysqlGetOrThrow<DatabaseOrder>(
             pool.execute(`SELECT * FROM _order WHERE id = ?`, [insertId]),
+        );
+        const dbOrderShipping = await mysqlGetOrThrow<DatabaseOrderShipping>(
+            pool.execute(`SELECT * FROM order_shipping WHERE order_id = ?`, [insertId]),
         );
 
         assert.deepStrictEqual(
             {
-                ...data,
-                date_created: new Date(data.date_created),
+                ...data.order,
+                date_created: new Date(data.order.date_created),
             },
-            orderSerializer.parse(order),
+            orderSerializer.parse(dbOrder),
         );
-        assert.strictEqual(order.status, "shipping");
+        assert.deepStrictEqual(
+            {
+                ...data.orderShipping,
+                date_created: new Date(data.orderShipping.date_created),
+            },
+            orderShippingSerializer.parse(dbOrderShipping),
+        );
+
+        //
+        assert.strictEqual(data.order.status, "shipping");
     }, "Confirm Order Shipping As Admin");
 
     await test(async () => {
@@ -245,11 +277,48 @@ testCase(async () => {
             method: "PUT",
             headers: {
                 Origin: env.ORIGIN as string,
-                Cookie: CUSTOMER_1_COOKIE,
-                "Content-Type": "application/json",
+                Cookie: ADMIN_1_COOKIE,
             },
+            body: objectToFormData({
+                tracking_number: "",
+                courier_name: "",
+                additional_information: "*".repeat(1029),
+            }),
         });
 
+        //
+        assert.strictEqual(response.status, 400);
+
+        //
+        const errors = await response.json();
+        assert.ok(Object.entries(errors).length);
+    }, "Fail To Confirm Order Shipping As Admin With Invalid Data");
+
+    await test(async () => {
+        const { cartProducts } = await ADMIN_1_CART_MIXN();
+        const cartProduct = cartProducts[0];
+        const insertId = await Order.create({
+            user_id: users.ADMIN_1.id,
+            product_id: cartProduct.product_id,
+            amount: cartProduct.amount,
+            status: "pending",
+            ...DUMMY_SHIPPING_DATA,
+        });
+
+        const response = await fetch(`http://localhost:3001/api/orders/${insertId}/confirm_shipping`, {
+            method: "PUT",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: CUSTOMER_1_COOKIE,
+            },
+            body: objectToFormData({
+                tracking_number: "123",
+                courier_name: "courier",
+                additional_information: "extra info",
+            }),
+        });
+
+        //
         assert.strictEqual(response.status, 403);
     }, "Fail To Confirm Order Shipping As Client");
 
@@ -322,4 +391,75 @@ testCase(async () => {
         // ...
         assert.strictEqual(order.status, "presumed_completed");
     }, "Confirm Order Presumed Complete As Admin");
+
+    await test(async () => {
+        // ...
+        const cart = await dbOperation(
+            async (connection) =>
+                await mysqlGetOrThrow<DatabaseCart>(
+                    connection.execute(`SELECT * FROM cart WHERE user_id = ?`, [users.CUSTOMER_1.id]),
+                ),
+        );
+        const product = products.ADMIN_1__PRODUCT_1;
+        await CartProduct.create({
+            product_id: product.id,
+            amount: 1,
+            cart_id: cart.id,
+        });
+        const insertId = await Order.create({
+            user_id: users.CUSTOMER_1.id,
+            product_id: product.id,
+            amount: 1,
+            status: "pending",
+            ...DUMMY_SHIPPING_DATA,
+        });
+
+        // ... confirm order / create order shipping
+        await fetch(`http://localhost:3001/api/orders/${insertId}/confirm_shipping`, {
+            method: "PUT",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: ADMIN_1_COOKIE,
+            },
+            body: objectToFormData({
+                tracking_number: "123",
+                courier_name: "courier",
+                additional_information: "extra info",
+            }),
+        });
+
+        // ... retrieve order shipping (as customer)
+        let response = await fetch(`http://localhost:3001/api/orders/${insertId}/shipping`, {
+            method: "GET",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: CUSTOMER_1_COOKIE,
+            },
+        });
+
+        // ...
+        assert.strictEqual(response.status, 200);
+
+        // ...
+        const data: z.output<typeof orderShippingSerializer> = await response.json();
+        const ordershipping = await mysqlGetOrThrow<DatabaseOrderShipping>(
+            pool.execute(`SELECT * FROM order_shipping WHERE order_id = ?`, [insertId]),
+        );
+        assert.deepStrictEqual(orderShippingSerializer.parse(ordershipping), {
+            ...data,
+            date_created: new Date(data.date_created),
+        });
+
+        // ... retrieve order shipping (as admin)
+        response = await fetch(`http://localhost:3001/api/orders/${insertId}/shipping`, {
+            method: "GET",
+            headers: {
+                Origin: env.ORIGIN as string,
+                Cookie: ADMIN_1_COOKIE,
+            },
+        });
+
+        // ...
+        assert.strictEqual(response.status, 200);
+    }, "Successfully fetch order shipping data as client or admin");
 });

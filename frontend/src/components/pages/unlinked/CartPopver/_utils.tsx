@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useAppContext } from "../../../../Context";
 import { CartType } from "../../../../Types";
 import { createUseContext } from "../../../../utils";

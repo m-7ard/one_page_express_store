@@ -1,14 +1,15 @@
 import { DocumentTextIcon, ShoppingCartIcon, UserIcon } from "@heroicons/react/24/solid";
 import UserPopover from "../../unlinked/UserPopover/UserPopover";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Updater, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppContext } from "../../../../Context";
 import { CartType, FilterType, OrderType, UserType } from "../../../../Types";
 import { Outlet } from "@tanstack/react-router";
 import RouteNavigatorPopover from "./RouteNavigatorPopover/RouteNavigatorPopover";
 import CartPopover from "../../unlinked/CartPopver/CartPopover";
 import AbstractPopover from "../../../elements/abstract/AbstractPopover";
+import React, { useCallback, useState } from "react";
 
-export type InitialUserDataQuery = {
+export type UserRelatedData = {
     user: UserType;
     cart: CartType;
     orders: OrderType[];
@@ -22,9 +23,11 @@ const filters: FilterType[] = rawFilters.map(({ field_name, field_value }) => ({
     field_value: JSON.parse(field_value),
 }));
 
+export const USER_RELATED_DATA_QK = ["user_related_data"];
+
 export default function App() {
-    const userAndCartQuery = useQuery<InitialUserDataQuery>({
-        queryKey: ["user_and_cart"],
+    const userRelatedDataQuery = useQuery<UserRelatedData>({
+        queryKey: USER_RELATED_DATA_QK,
         queryFn: async () => {
             const response = await fetch("/api/users/user/");
             if (response.ok) {
@@ -35,23 +38,32 @@ export default function App() {
             throw Error("Could not fetch initial user data from server");
         },
     });
-    const queryClient = useQueryClient(); 
 
-    if (!userAndCartQuery.isSuccess) {
+    const queryClient = useQueryClient();
+
+    const updateUserRelatedData = useCallback(
+        <T extends keyof NonNullable<UserRelatedData>>(
+            key: T,
+            updater: (previous: NonNullable<UserRelatedData>[T]) => NonNullable<UserRelatedData>[T],
+        ) => {
+            queryClient.setQueryData<UserRelatedData>(USER_RELATED_DATA_QK, (previous) => {
+                if (previous == null) return;
+                const newData = { ...previous };
+                newData[key] = updater(newData[key]);
+                return newData;
+            });
+        },
+        [queryClient],
+    );
+
+    if (!userRelatedDataQuery.isSuccess || userRelatedDataQuery.data == null) {
         return;
     }
 
-    const user = userAndCartQuery.data?.user;
-    const cart = userAndCartQuery.data?.cart;
-    const orders = userAndCartQuery.data?.orders;
-
-    queryClient.setQueryData(["user"], () => user);
-    queryClient.setQueryData(["cart"], () => cart);
-    queryClient.setQueryData(["orders"], () => orders);
-    console.log(orders)
+    const { user, orders, cart } = userRelatedDataQuery.data;
 
     return (
-        <AppContext.Provider value={{ user, filters, cart }}>
+        <AppContext.Provider value={{ user, filters, orders, cart, updateUserRelatedData }}>
             <div className="scroll-smooth h-screen flex flex-col bg-yellow-50 overflow-auto text-gray-900">
                 <div
                     style={{ zIndex: 100 }}
@@ -73,7 +85,7 @@ export default function App() {
                                         </div>
                                     </AbstractPopover.Trigger>
                                 )}
-                                positioning={{ top: '100%', left: "0px" }}
+                                positioning={{ top: "100%", left: "0px" }}
                             />
                         </div>
                         <div className="flex flex-row gap-4 items-center">

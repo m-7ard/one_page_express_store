@@ -47,3 +47,13 @@ export interface DatabaseOrder extends RowDataPacket {
     shipping_country: string;
     status: "pending" | "shipping" | "completed" | "canceled" | "refunded";
 }
+
+export interface DatabaseOrderShipping extends RowDataPacket {
+    id: number;
+    order_id: DatabaseOrder["id"] | null;
+    tracking_number: string;
+    courier_name: string;
+    additional_information: string;
+    date_created: string;
+}
+

@@ -1,23 +1,24 @@
 import {
-    Navigate,
     Outlet,
     RouterProvider,
     createMemoryHistory,
     createRootRoute,
     createRoute,
     createRouter,
+    useNavigate,
 } from "@tanstack/react-router";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { useOrderContext } from "../_utils";
-import AbstractDialog, { AbstractDialogTrigger } from "../../../../../elements/abstract/AbstractDialog";
+import AbstractDialog, { AbstractDialogTrigger } from "../../../../../../elements/abstract/AbstractDialog";
 import { useRef } from "react";
 import { Dialog } from "@headlessui/react";
-import { useGenericForm } from "../../../../../../utils";
-import { useMutation } from "@tanstack/react-query";
-import Fieldset from "../../../../../elements/forms/Fieldset";
-import { FormCharFieldWidget } from "../../../../../elements/forms/widgets/FormCharFieldWidget";
-import { FormTextAreaWidget } from "../../../../../elements/forms/widgets/FormTextAreaWidget";
-import { useAbstractDialogContext } from "../../../../../../Context";
+import { useGenericForm } from "../../../../../../../utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import Fieldset from "../../../../../../elements/forms/Fieldset";
+import { FormCharFieldWidget } from "../../../../../../elements/forms/widgets/FormCharFieldWidget";
+import { FormTextAreaWidget } from "../../../../../../elements/forms/widgets/FormTextAreaWidget";
+import { useAbstractDialogContext } from "../../../../../../../Context";
+import { OrderShippingType, OrderType } from "../../../../../../../Types";
 
 const rootRoute = createRootRoute({
     component: () => <Outlet />,
@@ -38,7 +39,9 @@ const successRoute = createRoute({
 const routeTree = rootRoute.addChildren([formRoute, successRoute]);
 
 export default function ConfirmOrderDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
-    return <AbstractDialog Trigger={Trigger} Panel={ConfirmOrderDialog.Panel} />;
+    // Order is used here to prevent confirmation screen from closing
+    const order = useOrderContext();
+    return <AbstractDialog Trigger={order.status === "pending" ? Trigger : undefined} Panel={ConfirmOrderDialog.Panel} />;
 }
 
 ConfirmOrderDialog.Panel = function Panel({ onClose }: { onClose: () => void }) {
@@ -60,15 +63,30 @@ ConfirmOrderDialog.Panel = function Panel({ onClose }: { onClose: () => void }) 
 };
 
 function ConfirmOrderForm() {
-    const { order } = useOrderContext();
+    const queryClient = useQueryClient();
+    const order = useOrderContext();
     const { errors, setErrors } = useGenericForm();
+    const navigate = useNavigate({ from: "/" });
 
     const mutation = useMutation({
         mutationFn: async ({ form }: { form: HTMLFormElement }) => {
-            
+            const response = await fetch(`/api/orders/${order.id}/confirm_shipping`, {
+                method: "PUT",
+                body: new FormData(form),
+            });
+            if (response.ok) {
+                return await response.json();
+            }
+
+            const errors = await response.json();
+            setErrors(errors);
             return Promise.reject(errors);
         },
-        onSuccess: (data) => {},
+        onSuccess: (data: { order: OrderType; orderShipping: OrderShippingType }) => {
+            queryClient.invalidateQueries({ queryKey: ["store_orders"] });
+            queryClient.setQueryData(["order", data.order.id, "shipping"], () => data.orderShipping);
+            navigate({ to: "/success" });
+        },
     });
 
     return (
@@ -97,6 +115,7 @@ function ConfirmOrderForm() {
                         },
                         {
                             name: "additional_information",
+                            optional: true,
                             widget: FormTextAreaWidget({ maxLength: 1028 }),
                         },
                     ]}
@@ -119,16 +138,13 @@ function ConfirmOrderForm() {
 }
 
 function Success() {
-    const { order } = useOrderContext();
     const { setOpen } = useAbstractDialogContext();
-
-    if (order == null) {
-        return <Navigate to={"/"} />;
-    }
+    const order = useOrderContext();
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="w-full text-center">Successfully Created "{product.name}"</div>
+            <div className="text-xs text-gray-600">ID: #{order.id} Shipping</div>
+            <div className="w-full text-center">Successfully Confirmed "{order.archive.product.name}"</div>
             <hr className="app__x-divider"></hr>
             <div
                 className={`

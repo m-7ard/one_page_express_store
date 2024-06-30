@@ -116,12 +116,10 @@ function CreateProductForm() {
                     fields={[
                         {
                             name: "name",
-                            label: "Name",
                             widget: FormCharFieldWidget({}),
                         },
                         {
                             name: "description",
-                            label: "Description",
                             widget: FormTextAreaWidget({
                                 maxLength: 512,
                             }),
@@ -129,20 +127,23 @@ function CreateProductForm() {
                         },
                         {
                             name: "price",
-                            label: "Price",
+                            widget: FormCharFieldWidget({
+                                type: "numeric",
+                            }),
+                        },
+                        {
+                            name: "available",
                             widget: FormCharFieldWidget({
                                 type: "numeric",
                             }),
                         },
                         {
                             name: "kind",
-                            label: "Kind",
                             widget: FormCharFieldWidget({}),
                             helperText: "Kind will be used for filtering. Is case sensitive.",
                         },
                         {
                             name: "images",
-                            label: "Images",
                             widget: LazyFormImageUploadWidget({
                                 maxFileSize: PRODUCT.MAX_IMAGE_SIZE,
                                 maxFileLength: PRODUCT.MAX_IMAGES_LENGTH,
@@ -156,7 +157,6 @@ function CreateProductForm() {
                         },
                         {
                             name: "specification",
-                            label: "Specification",
                             widget: SpecificationInputWidget({}),
                         },
                     ]}

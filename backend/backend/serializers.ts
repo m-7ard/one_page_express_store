@@ -97,4 +97,13 @@ export const orderSerializer = z.object({
     shipping_zip: z.string(),
     shipping_country: z.string(),
     status: orderSchema.shape.status,
+});
+
+export const orderShippingSerializer = z.object({
+    id: z.number().min(1),
+    order_id: z.number().min(1).nullable(),
+    tracking_number: z.string(),
+    courier_name: z.string(),
+    additional_information: z.string(),
+    date_created: z.date(),
 })

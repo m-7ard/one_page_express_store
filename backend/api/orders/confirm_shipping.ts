@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { dbOperation, mysqlGetOrThrow, routeWithErrorHandling } from "../../backend/utils.js";
-import { Order } from "../../backend/managers.js";
-import { orderSerializer } from "../../backend/serializers.js";
-import { DatabaseOrder } from "../../backend/database_types.js";
-import { orderSchema } from "../../backend/schemas.js";
+import { dbOperation, mysqlGetOrThrow, mysqlQueryTableByID, routeWithErrorHandling } from "../../backend/utils.js";
+import { Order, OrderShipping } from "../../backend/managers.js";
+import { orderSerializer, orderShippingSerializer } from "../../backend/serializers.js";
+import { DatabaseOrder, DatabaseOrderShipping } from "../../backend/database_types.js";
+import { orderSchema, orderShippingSchema } from "../../backend/schemas.js";
 
 const confirm_shipping = routeWithErrorHandling(async (request: Request, response: Response) => {
     const user = response.locals.user;
@@ -13,26 +13,37 @@ const confirm_shipping = routeWithErrorHandling(async (request: Request, respons
     }
 
     const { id } = request.params;
-    const validation = await orderSchema
-        .partial()
+    const validation = await orderShippingSchema
         .required({
-            id: true,
-            status: true,
+            order_id: true,
         })
-        .safeParseAsync({ id, status: "shipping" });
+        .omit({
+            date_created: true,
+            id: true,
+        })
+        .safeParseAsync({
+            order_id: id,
+            ...request.body,
+        });
 
     if (!validation.success) {
-        console.log(validation.error.flatten())
         response.status(400).json(validation.error.flatten());
         return;
     }
 
-    await Order.update(validation.data);
-    await dbOperation(async (connection) => {
-        const updatedOrder = await mysqlGetOrThrow<DatabaseOrder>(
-            connection.execute(`SELECT * FROM _order WHERE id = ?`, [id]),
-        );
-        response.status(200).json(orderSerializer.parse(updatedOrder));
+    const cleanedData = validation.data;
+
+    const shippingInsertId = await OrderShipping.create(validation.data);
+    await Order.update({
+        id: cleanedData.order_id,
+        status: "shipping",
+    });
+
+    const [updatedOrder] = await mysqlQueryTableByID<DatabaseOrder>({ table: "_order", id: cleanedData.order_id });
+    const [orderShipping] = await mysqlQueryTableByID({ table: "order_shipping", id: shippingInsertId });
+    response.status(200).json({
+        order: orderSerializer.parse(updatedOrder),
+        orderShipping: orderShippingSerializer.parse(orderShipping),
     });
 });
 

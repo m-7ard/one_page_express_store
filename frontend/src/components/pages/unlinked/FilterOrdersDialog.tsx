@@ -1,29 +1,28 @@
 import { XMarkIcon } from "@heroicons/react/24/solid";
 import { useAbstractDialogContext, useQueryStringContext } from "../../../Context";
-import AbstractDialog, { AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
+import AbstractDialog, { AbstractDialogPanel, AbstractDialogTrigger } from "../../elements/abstract/AbstractDialog";
 import { Dialog } from "@headlessui/react";
 import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldWidget";
 import FormField from "../../elements/forms/FormField";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { ComponentProps, useRef, useState } from "react";
 import { PaginatedQuery, ProductType } from "../../../Types";
 import FormListboxWidget from "../../elements/forms/widgets/FormListBox";
 
 export default function FilterOrderDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
-    return (
-        <AbstractDialog
-            Trigger={Trigger}
-            Panel={({ onClose }) => (
-                <Dialog.Panel className="top-0 right-0 bottom-0 p-4 max-w-sm w-full max-h-full overflow-hidden bg-yellow-50 absolute text-gray-900 border-l border-gray-900 shadow">
-                    <div className="absolute right-4 top-4 cursor-pointer" onClick={onClose}>
-                        <XMarkIcon className="w-6 h-6" />
-                    </div>
-                    <FilterOrderForm />
-                </Dialog.Panel>
-            )}
-        />
-    );
+    return <AbstractDialog Trigger={Trigger} Panel={FilterOrderDialog.Panel} />;
 }
+
+FilterOrderDialog.Panel = function Panel({ onClose }: ComponentProps<AbstractDialogPanel>) {
+    return (
+        <Dialog.Panel className="top-0 right-0 bottom-0 p-4 max-w-sm w-full max-h-full overflow-hidden bg-yellow-50 absolute text-gray-900 border-l border-gray-900 shadow">
+            <div className="absolute right-4 top-4 cursor-pointer" onClick={onClose}>
+                <XMarkIcon className="w-6 h-6" />
+            </div>
+            <FilterOrderForm />
+        </Dialog.Panel>
+    );
+};
 
 function FilterOrderForm() {
     /*
@@ -118,24 +117,12 @@ function FilterOrderForm() {
                                 { label: "Canceled", value: "canceled" },
                                 { label: "Refunded", value: "refunded" },
                             ],
-                            placeholder: 'All'
+                            placeholder: "All",
                         })}
                     />
-                    <FormField
-                        name="product_name"
-                        label="Product Name (Archived)"
-                        widget={FormCharFieldWidget({})}
-                    />
-                    <FormField
-                        name="client_name"
-                        label="Client Name"
-                        widget={FormCharFieldWidget({})}
-                    />
-                    <FormField
-                        name="amount"
-                        label="Amount"
-                        widget={FormCharFieldWidget({})}
-                    />
+                    <FormField name="product_name" label="Product Name (Archived)" widget={FormCharFieldWidget({})} />
+                    <FormField name="client_name" label="Client Name" widget={FormCharFieldWidget({})} />
+                    <FormField name="amount" label="Amount" widget={FormCharFieldWidget({})} />
                 </div>
             </div>
             <div className="flex flex-col gap-4 shrink-0">

@@ -78,14 +78,13 @@ export default function Frontpage() {
                             )) || <div></div>}
                             <div className="flex flex-row items-center gap-4 text-gray-900">
                                 <SortProductsPopover
-                                    Trigger={({ setReferenceElement }) => (
+                                    Trigger={() => (
                                         <Popover.Button
                                             className={`
                                                 mixin-button-like
                                                 mixin-button-base
                                                 theme-button-generic-white
                                             `}
-                                            ref={setReferenceElement}
                                         >
                                             <div>Sort</div>
                                             <ChevronUpDownIcon className="w-4 h-4" />

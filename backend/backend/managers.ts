@@ -1,6 +1,6 @@
 import { ZodOptional, z } from "zod";
 import { DatabaseCartProduct, DatabaseProduct, DatabaseUser } from "./database_types.js";
-import { cartProductSchema, orderSchema, productSchema, userSchema } from "./schemas.js";
+import { cartProductSchema, orderSchema, orderShippingSchema, productSchema, userSchema } from "./schemas.js";
 import {
     dbOperation,
     dbOperationWithRollback,
@@ -18,6 +18,8 @@ import { BASE_DIR } from "./settings.js";
 import { rm, writeFile } from "fs/promises";
 import { productSerializer } from "./serializers.js";
 import { getFromContext } from "./context.js";
+import { connect } from "http2";
+import sql, { raw } from "sql-template-tag";
 
 interface UserCreate extends z.output<typeof userSchema> {}
 
@@ -385,3 +387,39 @@ export const Order = {
         });
     },
 };
+
+interface OrderShippingCreate extends z.output<typeof orderShippingSchema> {
+    order_id: NonNullable<z.output<typeof orderShippingSchema.shape.order_id>>;
+}
+interface OrderShippingUpdate extends Partial<z.output<typeof orderShippingSchema>> {
+    id: NonNullable<z.output<typeof orderShippingSchema.shape.id>>;
+}
+interface OrderShippingDelete extends Partial<z.output<typeof orderShippingSchema>> {
+    id: NonNullable<z.output<typeof orderShippingSchema.shape.id>>;
+}
+
+function sqlNamedSet (field: string, setTo: unknown, isRaw: boolean = false) {
+    const setToString = `${setTo}`;
+    return sql`${raw(field)} = ${isRaw ? raw(setToString) : setTo}`
+}
+
+export const OrderShipping = {
+    create: async (data: OrderShippingCreate) => {
+        const { insertId } = await dbOperation(async (connection) => {
+            const query = sql`
+                INSERT INTO order_shipping
+                    SET 
+                        order_id = ${data.order_id},
+                        tracking_number = ${data.tracking_number},
+                        courier_name = ${data.courier_name},
+                        additional_information = ${data.additional_information},
+                        date_created = NOW()
+            `
+
+            const [result] = await connection.execute<ResultSetHeader>(query.sql, query.values);
+            return result;
+        });
+
+        return insertId;
+    }
+}

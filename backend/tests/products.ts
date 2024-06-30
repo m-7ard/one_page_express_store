@@ -13,6 +13,7 @@ import path from "path";
 import { readFileSync } from "fs";
 import mime from "mime-types";
 import { PRODUCT } from "../backend/constants.js";
+import { productSchema } from "../backend/schemas.js";
 
 const EXPECTED_TOTAL_PRODUCT_COUNT = 3;
 const EXPECTED_PRICE_OVER_500_PRODUCT_COUNT = 2;
@@ -125,6 +126,58 @@ testCase(async () => {
         assert.strictEqual(data.user_id, product.user_id);
         await pool.execute(`DELETE FROM product where id = ?`, [data.id]);
     }, "Create Product As Admin");
+
+    await test(async () => {
+        const doPost = (data: Record<string, any>) =>
+            fetch("http://localhost:3001/api/products/create/", {
+                method: "POST",
+                headers: {
+                    Origin: env.ORIGIN as string,
+                    Cookie: ADMIN_1_COOKIE,
+                },
+                body: objectToFormData(data),
+            });
+
+        //-- 1
+        let response = await doPost({
+            ...VALID_CREATE_PRODUCT_DATA,
+            price: "Infinity",
+        });
+
+        assert.strictEqual(response.status, 400);
+        let errors: z.inferFlattenedErrors<typeof productSchema> = await response.json();
+        assert.ok(errors.fieldErrors.hasOwnProperty("price"));
+
+        //-- 2
+        response = await doPost({
+            ...VALID_CREATE_PRODUCT_DATA,
+            available: "Infinity",
+        });
+
+        assert.strictEqual(response.status, 400);
+        errors = await response.json();
+        assert.ok(errors.fieldErrors.hasOwnProperty("available"));
+
+        //-- 3
+        response = await doPost({
+            ...VALID_CREATE_PRODUCT_DATA,
+            available: "-1",
+        });
+
+        assert.strictEqual(response.status, 400);
+        errors = await response.json();
+        assert.ok(errors.fieldErrors.hasOwnProperty("available"));
+
+        //-- 4
+        response = await doPost({
+            ...VALID_CREATE_PRODUCT_DATA,
+            available: "1.123",
+        });
+
+        assert.strictEqual(response.status, 400);
+        errors = await response.json();
+        assert.ok(errors.fieldErrors.hasOwnProperty("available"));
+    }, "Fail to create product with bad number inputs");
 
     await test(async () => {
         const response = await fetch("http://localhost:3001/api/products/create/", {
@@ -256,7 +309,7 @@ testCase(async () => {
 
         assert.strictEqual(response.status, 400);
         const errors: z.typeToFlattenedError<string> = await response.json();
-        assert.ok(errors.fieldErrors.hasOwnProperty('newImages'));
+        assert.ok(errors.fieldErrors.hasOwnProperty("newImages"));
         assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Create Product With Too Many Images");
 
@@ -409,7 +462,7 @@ testCase(async () => {
 
         assert.strictEqual(response.status, 400);
         const errors: z.typeToFlattenedError<string> = await response.json();
-        assert.ok(errors.fieldErrors.hasOwnProperty('newImages'));
+        assert.ok(errors.fieldErrors.hasOwnProperty("newImages"));
         assert.deepStrictEqual(productSerializer.parse(products.ADMIN_1__PRODUCT_1), productSerializer.parse(product));
     }, "Fail To Edit Product With Too Many Images");
 

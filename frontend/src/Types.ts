@@ -54,3 +54,12 @@ export interface PaginatedQuery<T> {
     nextPage: number | undefined;
     previousPage: number | undefined;
 }
+
+export interface OrderShippingType {
+    id: number;
+    date_created: string;
+    tracking_number: string;
+    courier_name: string;
+    additional_information: string;
+    order_id: OrderType["id"] | null;
+}

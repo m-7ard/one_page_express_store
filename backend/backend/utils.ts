@@ -235,4 +235,32 @@ export async function getPaginatedQuery<T extends RowDataPacket>({
 
 export function sqlEqualIfNullShortcut(field: string) {
     return `${field} = IF (:${field} IS NULL, ${field}, :${field})`;
-} 
+}
+
+export const zodHelpers = {
+    coerceFiniteNumber: (validator?: z.ZodTypeAny) =>
+        z
+            .string()
+            .min(1)
+            .refine((inp) => {
+                const valid = new Set(["1", "2", "3", "4", "5", "6", "7", "8", "9", "0", "."]);
+                for (let i = 0; i < inp.length; i++) {
+                    if (!valid.has(inp[i])) return false;
+                }
+                return true;
+            }, "Invalid number.")
+            .or(z.number())
+            .pipe(z.coerce.number().refine((val) => isFinite(val), "Invalid number."))
+            .transform((val, ctx) => {
+                if (validator == null) return val;
+                
+                const validation = validator.safeParse(val);
+                if (!validation.success) {
+                    const errors = validation.error;
+                    errors.issues.forEach((issue) => ctx.addIssue(issue));
+                    return z.NEVER;
+                }
+
+                return validation.data;
+            }),
+};

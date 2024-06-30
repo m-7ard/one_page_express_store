@@ -8,8 +8,9 @@ import { z } from "zod";
 import { FormCharFieldWidget } from "../../../../elements/forms/widgets/FormCharFieldWidget";
 import { useCartPopoverContext } from "../_utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InitialUserDataQuery } from "../../../linked/App/App";
+import { UserRelatedData } from "../../../linked/App/App";
 import ProductInformationDisplayDialog from "../../ProductInformationDisplayDialog";
+import { useAppContext } from "../../../../../Context";
 
 type APIErrorFormat = {
     cartProducts:
@@ -67,6 +68,7 @@ export function Checkout() {
     } = useRouterState();
     const customState = state as { cartProductsCheckout: CartProductType[] } & HistoryState;
     const [cartProductsCheckout, setCartProductsCheckout] = useState(customState.cartProductsCheckout);
+    const { updateUserRelatedData } = useAppContext();
 
     //
     const { cart } = useCartPopoverContext();
@@ -110,11 +112,13 @@ export function Checkout() {
         },
         onSuccess: (data: OrderType[]) => {
             queryClient.setQueryData<OrderType[]>(["orders"], (previous) => {
-                if (previous == null) {
-                    return;
-                }
-
+                if (previous == null) return;
                 return [...previous, ...data];
+            });
+            updateUserRelatedData("cart", (previous) => {
+                return { ...previous, products: previous.products.filter((cp) => {
+                    return cartProductsCheckout.find(({ id }) => cp.id === id) == null;
+                })}
             });
             navigate({ to: "/" });
         }

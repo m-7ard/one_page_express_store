@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { access } from "fs/promises";
 import { BASE_DIR } from "./settings.js";
-import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID } from "./utils.js";
+import { dbOperation, mysqlGetOrThrow, mysqlGetQuery, mysqlQueryTableByID, zodHelpers } from "./utils.js";
 import { RowDataPacket } from "mysql2";
 import { PRODUCT } from "./constants.js";
 import { DatabaseProduct, DatabaseUser } from "./database_types.js";
@@ -20,7 +20,7 @@ export const productSchema = z.object({
         .optional(),
     name: z.string().min(1).max(50),
     description: z.string().max(512).default(""),
-    price: z.coerce.number().min(0.1),
+    price: zodHelpers.coerceFiniteNumber(z.number().min(0.1)),
     kind: z.string().min(1).max(50),
     newImages: z
         .array(
@@ -102,7 +102,12 @@ export const productSchema = z.object({
             return result.length !== 0;
         });
     }),
-    available: z.coerce.number().min(0),
+    available: zodHelpers.coerceFiniteNumber(
+        z
+            .number()
+            .min(1)
+            .refine((val) => Number.isSafeInteger(val), "Invalid number."),
+    ),
 });
 
 export const userSchema = z.object({
@@ -147,8 +152,8 @@ export const orderSchema = z.object({
             message: "Cart Product does not exist.",
         })
         .optional(),
-    user_id: z.string().nullable(),
-    product_id: z.number().nullable(),
+    user_id: z.string().optional(),
+    product_id: z.number().optional(),
     amount: z.number().min(1),
     date_created: z.date().optional(),
     archive: z
@@ -175,4 +180,23 @@ export const orderSchema = z.object({
     status: z
         .enum(["pending", "shipping", "completed", "presumed_completed", "canceled", "refunded"])
         .default("pending"),
+});
+
+export const orderShippingSchema = z.object({
+    id: z.coerce
+        .number()
+        .min(1)
+        .refine(
+            async (value) =>
+                (await mysqlQueryTableByID({ table: "order_shipping", id: value, fields: 1 })).length !== 0,
+            {
+                message: "Order Shipping does not exist.",
+            },
+        )
+        .optional(),
+    order_id: orderSchema.shape.id.optional(),
+    tracking_number: z.string().min(1).max(255),
+    courier_name: z.string().min(1).max(255),
+    additional_information: z.string().max(1028),
+    date_created: z.date().optional(),
 });

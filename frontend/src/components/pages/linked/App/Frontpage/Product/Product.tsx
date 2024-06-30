@@ -6,12 +6,12 @@ import ProductInformationDisplayDialog from "../../../../unlinked/ProductInforma
 import UserPopover from "../../../../unlinked/UserPopover/UserPopover";
 import { Popover } from "@headlessui/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { InitialUserDataQuery } from "../../App";
+import { UserRelatedData } from "../../App";
 import AbstractPopover from "../../../../../elements/abstract/AbstractPopover";
 
 export default function Product(product: ProductType) {
     const queryClient = useQueryClient();
-    const { user, cart } = useAppContext();
+    const { user, cart, updateUserRelatedData } = useAppContext();
     const { name, price, images, kind } = product;
 
     const isInCart =
@@ -25,7 +25,7 @@ export default function Product(product: ProductType) {
             const response = await fetch(`/api/cart/add_product/${product.id}`, {
                 method: "POST",
                 body: JSON.stringify({
-                    amount: 1
+                    amount: 1,
                 }),
                 headers: {
                     "Content-Type": "application/json",
@@ -40,17 +40,10 @@ export default function Product(product: ProductType) {
             return Promise.reject(errors);
         },
         onSuccess: (data: CartProductType) => {
-            queryClient.setQueryData<InitialUserDataQuery>(["user_and_cart"], (previous) => {
-                if (previous == null) {
-                    return null;
-                }
-
+            updateUserRelatedData("cart", (previous) => {
                 return {
                     ...previous,
-                    cart: {
-                        ...previous.cart,
-                        products: [...previous.cart.products, data],
-                    },
+                    products: [...previous.products, data],
                 };
             });
         },

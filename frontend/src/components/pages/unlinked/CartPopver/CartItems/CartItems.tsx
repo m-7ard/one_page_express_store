@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { createUseContext } from "../../../../../utils";
-import { CartProductType } from "../../../../../Types";
+import { CartProductType, CartType } from "../../../../../Types";
 import { FormErrors } from "../../../../elements/forms/GenericForm";
 import { useCallback, useState } from "react";
 import ProductInformationDisplayDialog from "../../ProductInformationDisplayDialog";
-import { InitialUserDataQuery } from "../../../linked/App/App";
+import { InitialUserDataQuery, UserRelatedData } from "../../../linked/App/App";
 import { useCartPopoverContext } from "../_utils";
+import { useAppContext } from "../../../../../Context";
 
 const [CartItemsContext, useCartItemsContext] = createUseContext<{
     updateCartProductsUpdateData: ({ id, ...data }: Pick<CartProductType, "amount" | "id">) => void;
@@ -19,6 +20,7 @@ const [CartItemsContext, useCartItemsContext] = createUseContext<{
 export default function CartItems() {
     //
     const { cart } = useCartPopoverContext();
+    const { updateUserRelatedData } = useAppContext();
 
     //
     const queryClient = useQueryClient();
@@ -73,29 +75,20 @@ export default function CartItems() {
             return Promise.reject();
         },
         onSuccess: () => {
-            queryClient.setQueryData(["user_and_cart"], (previous: InitialUserDataQuery) => {
-                if (previous == null) {
-                    return null;
-                }
+            updateUserRelatedData("cart", (previous) => ({
+                ...previous,
+                products: previous.products.map((cp) => {
+                    const overrideData = cartProductsUpdate[cp.id];
+                    if (overrideData == null) {
+                        return cp;
+                    }
 
-                return {
-                    ...previous,
-                    cart: {
-                        ...previous.cart,
-                        products: previous.cart.products.map((cp) => {
-                            const overrideData = cartProductsUpdate[cp.id];
-                            if (overrideData == null) {
-                                return cp;
-                            }
-
-                            return {
-                                ...cp,
-                                ...overrideData,
-                            };
-                        }),
-                    },
-                };
-            });
+                    return {
+                        ...cp,
+                        ...overrideData,
+                    };
+                }),
+            }));
             setCartProductUpdate([]);
         },
     });
@@ -205,17 +198,14 @@ function CartItem({ cartProduct }: { cartProduct: CartProductType }) {
             }
         },
         onSuccess: () => {
-            queryClient.setQueryData(["user_and_cart"], (previous: InitialUserDataQuery) => {
+            queryClient.setQueryData(["cart"], (previous: CartType) => {
                 if (previous == null) {
                     return null;
                 }
 
                 return {
                     ...previous,
-                    cart: {
-                        ...previous.cart,
-                        products: previous.cart.products.filter((cp) => cp.id !== cartProduct.id),
-                    },
+                    products: previous.products.filter((cp) => cp.id !== cartProduct.id),
                 };
             });
             setCartProductUpdate({});

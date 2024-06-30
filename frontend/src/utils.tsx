@@ -225,6 +225,8 @@ function usePositioning({
         }
 
         setTimeout(() => {
+            // Needs to happen on the next iteration of the event
+            // loop to account for router transitions
             resizeWindow();
             window.addEventListener("resize", resizeWindow);
             setPositionFlag(true);

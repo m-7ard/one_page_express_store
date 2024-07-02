@@ -31,6 +31,12 @@ button:focus {
   .mixin-char-input-sm > input {
     @apply mixin-button-sm absolute inset-0 transition-colors;
   }
+  .mixin-char-input-base {
+    @apply mixin-button-base;
+  }
+  .mixin-char-input-base > input {
+    @apply mixin-button-base absolute inset-0 transition-colors;
+  }
   .theme-input-generic-white {
     @apply border border-gray-900 flex flex-grow;
   }

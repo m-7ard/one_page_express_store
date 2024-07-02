@@ -6,7 +6,7 @@ import { FormCharFieldWidget } from "../../elements/forms/widgets/FormCharFieldW
 import FormField from "../../elements/forms/FormField";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ComponentProps, useRef, useState } from "react";
-import { PaginatedQuery, ProductType } from "../../../Types";
+import { OrderType, PaginatedQuery, ProductType } from "../../../Types";
 import FormListboxWidget from "../../elements/forms/widgets/FormListBox";
 
 export default function FilterOrderDialog({ Trigger }: { Trigger: AbstractDialogTrigger }) {
@@ -28,17 +28,12 @@ function FilterOrderForm() {
     /*
     
         TODO: 
-            - filter by product name, requires to look up how to query the fk
-            - status
-            - client name
-            - amount
             - total price (?) requires lookup
 
     */
     const queryClient = useQueryClient();
     const { setOpen } = useAbstractDialogContext();
     const { sortParams, filterParams } = useQueryStringContext();
-
     const formRef = useRef<HTMLFormElement>(null);
     const [formKey, setFormKey] = useState(() => window.crypto.randomUUID());
     const [choices, setChoices] = useState<Record<string, string | undefined>>(filterParams.current);
@@ -49,18 +44,18 @@ function FilterOrderForm() {
             const queryParams = Object.fromEntries(formData.entries()) as Record<string, string>;
             filterParams.current = queryParams;
             const queryString = new URLSearchParams({ ...sortParams.current, ...filterParams.current }).toString();
-            const response = await fetch(`/api/products/list?${queryString}`, {
+            const response = await fetch(`/api/orders/list?${queryString}`, {
                 method: "GET",
             });
             if (response.ok) {
-                const data: PaginatedQuery<ProductType> = await response.json();
+                const data: PaginatedQuery<OrderType> = await response.json();
                 return data;
             }
 
             return Promise.reject();
         },
         onSuccess: (data) => {
-            queryClient.setQueriesData({ queryKey: ["products"] }, () => data);
+            queryClient.setQueryData(["store_orders"], () => data);
             setOpen(false);
         },
     });
@@ -92,6 +87,7 @@ function FilterOrderForm() {
                                 label="Date Start"
                                 widget={FormCharFieldWidget({
                                     type: "datetime-local",
+                                    initial: choices.date_start
                                 })}
                             />
                         </div>
@@ -101,6 +97,7 @@ function FilterOrderForm() {
                                 label="Date End"
                                 widget={FormCharFieldWidget({
                                     type: "datetime-local",
+                                    initial: choices.date_end
                                 })}
                             />
                         </div>
@@ -118,11 +115,21 @@ function FilterOrderForm() {
                                 { label: "Refunded", value: "refunded" },
                             ],
                             placeholder: "All",
+                            initial: choices.status
                         })}
                     />
-                    <FormField name="product_name" label="Product Name (Archived)" widget={FormCharFieldWidget({})} />
-                    <FormField name="client_name" label="Client Name" widget={FormCharFieldWidget({})} />
-                    <FormField name="amount" label="Amount" widget={FormCharFieldWidget({})} />
+                    <FormField name="product_name" label="Product Name (Archived)" widget={FormCharFieldWidget({
+                        initial: choices.product_name
+                    })} />
+                    <FormField name="client_name" label="Client Name" widget={FormCharFieldWidget({
+                        initial: choices.client_name
+                    })} />
+                    <FormField name="amount" label="Amount" widget={FormCharFieldWidget({
+                        initial: choices.amount
+                    })} />
+                    <FormField name="total_price" widget={FormCharFieldWidget({
+                        initial: choices.total_price
+                    })} />
                 </div>
             </div>
             <div className="flex flex-col gap-4 shrink-0">

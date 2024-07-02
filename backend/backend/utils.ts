@@ -211,6 +211,7 @@ export async function getPaginatedQuery<T extends RowDataPacket>({
     pageSize: number;
     pageIndex: number;
 }) {
+    // The reason for the prefix is to not repeat outselves with countQuery
     return await dbOperation(async (connection) => {
         const resultQuery = await mysqlGetQuery<T>(
             connection.execute(`${prefix()} ${queryString} LIMIT ? OFFSET ?`, [

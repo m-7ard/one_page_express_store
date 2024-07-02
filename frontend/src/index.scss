@@ -39,6 +39,14 @@ button:focus {
         }
     }
 
+    .mixin-char-input-base {
+        @apply mixin-button-base;
+
+        > input {
+            @apply mixin-button-base absolute inset-0 transition-colors;
+        }
+    }
+
     .theme-input-generic-white {
         @apply border border-gray-900 flex flex-grow;
 

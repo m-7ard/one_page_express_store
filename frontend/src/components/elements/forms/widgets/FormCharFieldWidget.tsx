@@ -1,6 +1,5 @@
 import { InputHTMLAttributes, useEffect, useState } from "react";
 import { asWidget } from "../../../../utils";
-import App from "../../../pages/linked/App/App";
 
 interface FormCharFieldProps
     extends Omit<InputHTMLAttributes<HTMLInputElement>, "onChange"> {
@@ -21,9 +20,8 @@ function FormCharField({ initial, onChange, ...props }: FormCharFieldProps) {
     }, [value, onChange]);
 
     return (
-        <div className={`w-full ${App.InputWrapperClassNames}`}>
+        <div className={`w-full theme-input-generic-white mixin-char-input-like mixin-char-input-base`}>
             <input
-                className={`${App.InputElementClassNames} bg-gray-100 focus:bg-gray-200`}
                 value={value ?? ""}
                 onChange={({ target: { value } }) => {
                     setValue(value);

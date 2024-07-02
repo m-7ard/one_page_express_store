@@ -22,7 +22,7 @@ import { z } from "zod";
 import { productSchema } from "../backend/schemas.js";
 import sql, { join } from "sql-template-tag";
 
-context.testsToRun = ["Successfully fetch order shipping data as client or admin"];
+context.testsToRun = "__all__";
 
 /* 
     TODO: 

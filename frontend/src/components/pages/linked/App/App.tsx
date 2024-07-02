@@ -140,26 +140,3 @@ App.InputWrapperClassNames =
 App.InputElementClassNames = "absolute inset-0 transition-colors p-2";
 
 App.Divider = () => <hr className="h-0 w-full border-b-px border-gray-900"></hr>;
-
-/*
-const ButtonLike = classed(
-    "div",
-    "flex items-center leading-none content-box transition-colors cursor-pointer border select-none",
-);
-const BaseButton = classed("button", "gap-2 px-4 py-2");
-
-App.HeaderButton = classed(
-    "button",
-    "border-[#23231A]",
-    {
-        variants: {
-            state: {
-                active: "bg-[#38382A] text-gray-200 shadow-none",
-                neutral: "bg-[#464635] hover:bg-[#38382A] shadow hover:shadow-none text-gray-100 hover:text-gray-200",
-            },
-        },
-    },
-    ButtonLike,
-    BaseButton,
-);
-*/

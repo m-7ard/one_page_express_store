@@ -76,9 +76,8 @@ const SpecificationInputField = memo(function SpecificationInputField({
     return (
         <div className="flex flex-row gap-2 items-center">
             <div className="flex flex-col basis-1/2 group">
-                <div className={`w-full ${App.InputWrapperClassNames} relative`}>
+                <div className={`w-full theme-input-generic-white mixin-char-input-like mixin-char-input-base`}>
                     <input
-                        className={`${App.InputElementClassNames} text-gray-900 bg-gray-100 focus:bg-gray-200`}
                         value={field[0]}
                         onChange={({ target: { value } }) => {
                             setField((previous) => [value, previous[1]]);
@@ -88,9 +87,9 @@ const SpecificationInputField = memo(function SpecificationInputField({
                 </div>
             </div>
             <div className="flex flex-col basis-1/2">
-                <div className={`w-full ${App.InputWrapperClassNames} relative`}>
+                <div className={`w-full mixin-char-input-like mixin-char-input-base`}>
                     <input
-                        className={`${App.InputElementClassNames} text-gray-900 bg-gray-100 focus:bg-gray-200`}
+                        className={`theme-input-generic-white`}
                         value={field[1]}
                         onChange={({ target: { value } }) => {
                             setField((previous) => [previous[0], value]);

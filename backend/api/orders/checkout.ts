@@ -11,9 +11,7 @@ import { dbOperation, mysqlGetQuery, mysqlQueryTableByID, routeWithErrorHandling
 import { Order } from "../../backend/managers.js";
 import { z } from "zod";
 import { isDeepStrictEqual } from "util";
-type Prettify<T> = {
-    [K in keyof T]: T[K];
-} & {};
+
 
 const checkout = routeWithErrorHandling(async (request: Request, response: Response) => {
     const user = response.locals.user;
@@ -28,12 +26,12 @@ const checkout = routeWithErrorHandling(async (request: Request, response: Respo
             connection.query(
                 `
                 SELECT cart_product.*, product.available as product_available
-                FROM 
-                    cart_product 
-                    LEFT JOIN cart ON cart_product.cart_id = cart.id
-                    LEFT JOIN product ON cart_product.product_id = product.id
-                WHERE 
-                    cart.user_id = ?
+                    FROM 
+                        cart_product 
+                        LEFT JOIN cart ON cart_product.cart_id = cart.id
+                        LEFT JOIN product ON cart_product.product_id = product.id
+                    WHERE 
+                        cart.user_id = ?
                 `,
                 [user.id],
             ),
@@ -80,7 +78,7 @@ const checkout = routeWithErrorHandling(async (request: Request, response: Respo
         const cartProductValidator = z.record(
             z
                 .object({
-                    id: cartProductSchema.shape.id.refine(
+                    id: cartProductSchema.required().shape.id.refine(
                         (value) => {
                             return cartProducts.find(({ id }) => value === id) ?? false;
                         },

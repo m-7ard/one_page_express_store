@@ -35,5 +35,7 @@ npm-debug.log
 
 # Project-specific
 static/images/*
+!static/images/tests/
+!static/images/tests/**
 media
 filters.json

@@ -37,5 +37,5 @@ npm-debug.log
 static/images/*
 !static/images/tests/
 !static/images/tests/**
-media
+media/*
 filters.json
